@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  market-service-dev:
+    image: mhmarket/market:latest
+    container_name: market-service
+    ports:
+      - "9566:9566"
+    environment:
+      CLOUD_CONFIG_URL: http://103.162.20.141:8888
+      CLOUD_CONFIG_PROFILE: dev
+      CLOUD_CONFIG_LABEL: master
+    restart: unless-stopped
+    networks:
+      - mh-network
+    dns:
+      - 192.168.200.4
+      - 8.8.8.8
+networks:
+  mh-network:
+    driver: bridge

@@ -7,4 +7,4 @@ COPY /target/market-service.jar market-service.jar
 
 ENTRYPOINT ["java", "-jar", "market-service.jar"]
 
-EXPOSE 6566
+EXPOSE 9566
