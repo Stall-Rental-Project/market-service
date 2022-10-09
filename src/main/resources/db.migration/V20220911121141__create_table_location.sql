@@ -1,5 +1,4 @@
 set search_path to mhmarket;
-
 create table location
 (
     location_id uuid primary key default gen_random_uuid(),
