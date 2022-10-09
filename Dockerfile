@@ -5,6 +5,6 @@ WORKDIR /app
 
 COPY /target/market-service.jar market-service.jar
 
-ENTRYPOINT ["java", "-jar", "market-service.jar"]
+ENTRYPOINT ["java","-Dspring.profiles.active=dev", "-jar", "market-service.jar"]
 
 EXPOSE 9566
