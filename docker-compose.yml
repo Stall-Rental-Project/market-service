@@ -6,6 +6,8 @@ services:
     ports:
       - "9566:9566"
     environment:
+      SPRING_KAFKA_BOOTSTRAP-SERVERS: 103.162.20.141:9092
+      SPRING_KAFKA_CONSUMER.GROUP-ID: market-service-group
       CLOUD_CONFIG_URL: http://103.162.20.141:8888
       CLOUD_CONFIG_PROFILE: dev
       CLOUD_CONFIG_LABEL: master
