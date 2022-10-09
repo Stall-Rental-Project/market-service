@@ -2,7 +2,7 @@ set search_path to mhmarket;
 
 create table market
 (
-    market_id      uuid primary key default mhmarket.gen_random_uuid(),
+    market_id      uuid primary key default gen_random_uuid(),
     name           varchar(255) not null,
     code varchar(255) not null ,
     google_map text not null ,

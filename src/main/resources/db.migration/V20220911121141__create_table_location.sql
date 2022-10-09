@@ -1,7 +1,7 @@
 set search_path to mhmarket;
 create table location
 (
-    location_id uuid primary key default mhmarket.gen_random_uuid(),
+    location_id uuid primary key default gen_random_uuid(),
     province varchar(255) not null,
     city varchar(255) not null,
     barangay varchar(255) not null,
