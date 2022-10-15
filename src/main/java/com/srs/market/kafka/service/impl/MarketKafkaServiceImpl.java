@@ -1,9 +1,10 @@
 package com.srs.market.kafka.service.impl;
 
-import com.market.market.MarketClass;
-import com.market.market.MarketStatus;
-import com.market.market.MarketType;
+
 import com.srs.common.kafka.message.market.DemoKafkaMessage;
+import com.srs.market.MarketClass;
+import com.srs.market.MarketStatus;
+import com.srs.market.MarketType;
 import com.srs.market.entity.MarketEntity;
 import com.srs.market.exception.ObjectNotFoundException;
 import com.srs.market.kafka.service.MarketKafkaService;
@@ -25,7 +26,7 @@ public class MarketKafkaServiceImpl implements MarketKafkaService {
         log.info("Succeed to receive message");
         var location = locationRepository.findById(message.getBarangayId())
                 .orElseThrow(() -> new ObjectNotFoundException("Location not found"));
-        var market=new MarketEntity();
+        var market = new MarketEntity();
         market.setName(message.getMarketName());
         market.setLocation(location);
         market.setAddress(message.getStreet());

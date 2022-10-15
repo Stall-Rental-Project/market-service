@@ -16,7 +16,6 @@ import java.time.OffsetDateTime;
  * Common fields of entities are declared here.
  * Additionally, by listening on JPA Audit events, Hibernate will automatically mapped the time when an entity was persisted/updated
  *
- * @author duynt on 9/16/21
  */
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)

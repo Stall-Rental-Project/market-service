@@ -8,10 +8,6 @@ import org.hibernate.annotations.GenericGenerator;
 import javax.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.UUID;
-
-/**
- * @author duynt on 9/24/21
- */
 @Entity
 @Table(name = "market")
 @Getter

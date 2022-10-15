@@ -8,9 +8,6 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.util.UUID;
 
-/**
- * @author duynt on 9/24/21
- */
 @Entity
 @Table(name = "location")
 @Getter
@@ -32,7 +29,7 @@ public class LocationEntity implements Serializable {
     private String city;
 
     @Column(nullable = false)
-    private String barangay;
+    private String ward;
 
     @Column
     private String zipcode;
@@ -40,7 +37,5 @@ public class LocationEntity implements Serializable {
     @Column
     private String district;
 
-    @Column(nullable = false)
-    private boolean builtin = false;
 
 }
