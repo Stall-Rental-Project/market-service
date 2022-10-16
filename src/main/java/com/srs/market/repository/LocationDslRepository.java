@@ -50,7 +50,7 @@ public class LocationDslRepository {
     }
 
 
-    public List<String> findAllBarangaysByProvinceAndCity(ListWardRequest request) {
+    public List<String> findAllWardsByProvinceAndCity(ListWardRequest request) {
         var city = request.getCity();
         var province = request.getProvince();
         var searchTerm = request.getSearchTerm();

@@ -1,5 +1,6 @@
 package com.srs.market.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.srs.common.util.TimestampUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -43,8 +44,26 @@ public class MarketEntity {
 
     @Column(name = "class")
     private int clazz;
+
+    @Column(nullable = false)
+    private int state;
+
+    private UUID previousVersion;
+
+    private boolean deleted = false;
+
+    @OneToOne(mappedBy = "market", fetch = FetchType.LAZY, orphanRemoval = true)
+    private SupervisorEntity supervisor;
+
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+
+    @Transient
+    @JsonIgnore
+    public boolean isPrimaryVersion() {
+        return previousVersion == null;
+    }
+
     @PrePersist
     public void prePersist() {
         this.createdAt = TimestampUtil.now();

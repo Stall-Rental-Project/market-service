@@ -51,7 +51,7 @@ public class LocationGrpcServiceImpl implements LocationGrpcService {
 
     @Override
     public ListWardResponse listWards(ListWardRequest request) {
-        var wards = locationDslRepository.findAllBarangaysByProvinceAndCity(request);
+        var wards = locationDslRepository.findAllWardsByProvinceAndCity(request);
 
         return ListWardResponse.newBuilder()
                 .setSuccess(true)
