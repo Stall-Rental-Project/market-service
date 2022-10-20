@@ -19,7 +19,6 @@ public class LocationGrpcServer extends LocationServiceGrpc.LocationServiceImplB
     @Override
     public void listProvinces(ListProvinceRequest request, StreamObserver<ListProvinceResponse> responseObserver) {
         try {
-            var principal = GrpcPrincipalProvider.getGrpcPrincipal();
             responseObserver.onNext(locationGrpcService.listProvinces(request));
             responseObserver.onCompleted();
         } catch (Exception e) {
@@ -34,7 +33,6 @@ public class LocationGrpcServer extends LocationServiceGrpc.LocationServiceImplB
     @Override
     public void listCities(ListCityRequest request, StreamObserver<ListCityResponse> responseObserver) {
         try {
-            var principal = GrpcPrincipalProvider.getGrpcPrincipal();
             responseObserver.onNext(locationGrpcService.listCities(request));
             responseObserver.onCompleted();
         } catch (Exception e) {
@@ -50,7 +48,6 @@ public class LocationGrpcServer extends LocationServiceGrpc.LocationServiceImplB
     @Override
     public void listWards(ListWardRequest request, StreamObserver<ListWardResponse> responseObserver) {
         try {
-            var principal = GrpcPrincipalProvider.getGrpcPrincipal();
             responseObserver.onNext(locationGrpcService.listWards(request));
             responseObserver.onCompleted();
         } catch (Exception e) {
