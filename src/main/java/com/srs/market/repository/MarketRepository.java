@@ -68,4 +68,7 @@ public interface MarketRepository extends JpaRepository<MarketEntity, UUID> {
             "join fetch m.location " +
             "where m.previousVersion = :id")
     Optional<MarketEntity> findDraftVersionByIdFetchLocationAndSupervisor(@Param("id") UUID marketId);
+
+    Optional<MarketEntity> findByMarketIdAndDeletedIsFalse(UUID marketId);
+
 }
