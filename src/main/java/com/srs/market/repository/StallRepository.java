@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -46,4 +47,19 @@ public interface StallRepository extends JpaRepository<StallEntity, UUID> {
             "and s.deleted = false")
     List<StallWithDetailProjection> checkDraftStallThatHasDetail(
             @Param("marketId") UUID fromString);
+
+    boolean existsByPreviousVersion(UUID stallId);
+
+    @Query("select s from StallEntity s where s.previousVersion = :id")
+    Optional<StallEntity> findDraftVersionById(@Param("id") UUID stallId);
+
+    @Query("select s from StallEntity s " +
+            "inner join fetch s.market " +
+            "where s.stallId = :id " +
+            "and s.previousVersion is null " +
+            "and (" +
+            "   (s.deleted = false and s.state = 2) " +
+            "   or (s.deleted = true and s.state = 1 and s.publishedAtLeastOnce = true)" +
+            ")")
+    Optional<StallEntity> findById4SubmitApplication(@Param("id") UUID fromString);
 }

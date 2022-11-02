@@ -4,9 +4,8 @@ import com.srs.common.Error;
 import com.srs.common.ErrorCode;
 import com.srs.common.NoContentResponse;
 import com.srs.market.*;
-import com.srs.market.dto.projection.FloorStallCountProjection;
-import com.srs.market.dto.projection.StallWithDetailProjection;
 import com.srs.market.entity.FloorEntity;
+import com.srs.market.entity.FloorStallIndexEntity;
 import com.srs.market.entity.MarketEntity;
 import com.srs.market.exception.ObjectNotFoundException;
 import com.srs.market.grpc.mapper.FloorGrpcMapper;
@@ -30,7 +29,7 @@ import java.util.stream.Collectors;
 public class FloorGrpcServiceImpl implements FloorGrpcService {
     private final FloorRepository floorRepository;
     private final FloorDslRepository floorDslRepository;
-
+    private final FloorStallIndexRepository floorStallIndexRepository;
     private final StallDslRepository stallDslRepository;
     private final MarketRepository marketRepository;
 
@@ -98,6 +97,11 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
         floor.setMarket(market);
 
         floorRepository.save(floor);
+        var floorIndex = new FloorStallIndexEntity();
+        floorIndex.setFloorCode(floor.getCode());
+        floorIndex.setCurrentIndex(1);
+
+        floorStallIndexRepository.save(floorIndex);
 
         return CreateFloorResponse.newBuilder()
                 .setSuccess(true)
@@ -270,7 +274,8 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
 
         var floors = floorDslRepository.findAllByMarketId4List(market.getMarketId(), request.getDraft());
 
-        return asGrpcFloorList(market, floors);    }
+        return asGrpcFloorList(market, floors, request.getDraft());
+    }
 
     private UpdateFloorResponse doUpdateFloorMetadata(FloorEntity floor, UpdateFloorRequest request, GrpcPrincipal principal) {
 
@@ -302,51 +307,25 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
         return hasChanged;
     }
 
-    private ListFloorsResponse asGrpcFloorList(MarketEntity market, List<FloorEntity> floors) {
-        var totalStallCounters = floorRepository.countTotalStalls4EachFloorInMarket(market.getMarketId());
-
-        var primaryStallsWithDetailChecks = stallRepository.checkPrimaryStallThatHasDetail(market.getMarketId());
-        var draftStallsWithDetailChecks = stallRepository.checkDraftStallThatHasDetail(market.getMarketId());
-
-        Map<UUID /*stallId*/, Boolean /*numStallWithDetail*/> draftStallWithDetailMap = draftStallsWithDetailChecks.stream()
-                .collect(Collectors.toMap(StallWithDetailProjection::getRefId, s -> StringUtils.hasText(s.getName())));
-        Map<UUID /*floorId*/, Long /*numStallWithDetail*/> stallWithDetailMap = new HashMap<>();
-
-        for (var projection : primaryStallsWithDetailChecks) {
-            var floorId = projection.getFloorId();
-            var stallId = projection.getStallId();
-            var stallName = projection.getName();
-
-            if (!stallWithDetailMap.containsKey(floorId)) {
-                stallWithDetailMap.put(floorId, 0L);
-            }
-
-            if (StringUtils.hasText(stallName) || Boolean.TRUE.equals(draftStallWithDetailMap.get(stallId))) {
-                stallWithDetailMap.put(floorId, stallWithDetailMap.get(floorId) + 1);
-            }
+    private ListFloorsResponse asGrpcFloorList(MarketEntity market, List<FloorEntity> floors, boolean draft) {
+        var stallCount = new HashMap<UUID /*floorId*/, Long /*count*/>();
+        for (var s : floorDslRepository.countStallsByMarketIdGroupByFloor(market.getMarketId(), draft)) {
+            stallCount.put(s.get(0, UUID.class), s.get(1, Long.class));
         }
 
-        Map<UUID, Long> totalStallMap = totalStallCounters.stream()
-                .collect(Collectors.toMap(FloorStallCountProjection::getFloorplanId, FloorStallCountProjection::getNumStalls));
+        var stallHasDetailCount = new HashMap<UUID /*floorId*/, Long /*count*/>();
+        for (var s : floorDslRepository.countStallsHasDetailByMarketIdGroupByFloor(market.getMarketId(), draft)) {
+            stallHasDetailCount.put(s.get(0, UUID.class), s.get(1, Long.class));
+        }
 
-        List<Floor> grpcFloors = new ArrayList<>();
+        var grpcFloors = new ArrayList<Floor>();
         for (var floor : floors) {
             var floorId = floor.getFloorId();
-            var totalStalls = totalStallMap.getOrDefault(
-                    floorId,
-                    totalStallMap.getOrDefault(floor.getPreviousVersion(), 0L)
-            );
-            var totalStallsWithDetail = stallWithDetailMap.getOrDefault(
-                    floorId,
-                    stallWithDetailMap.getOrDefault(floor.getPreviousVersion(), 0L)
-            );
 
-            var grpcFloor = floorGrpcMapper.toGrpcBuilder(floor)
-                    .setTotalStalls(totalStalls)
-                    .setStallWithDetail(totalStallsWithDetail)
-                    .build();
-
-            grpcFloors.add(grpcFloor);
+            grpcFloors.add(floorGrpcMapper.toGrpcBuilder(floor)
+                    .setTotalStalls(stallCount.getOrDefault(floorId, 0L))
+                    .setStallWithDetail(stallHasDetailCount.getOrDefault(floorId, 0L))
+                    .build());
         }
 
         return ListFloorsResponse.newBuilder()

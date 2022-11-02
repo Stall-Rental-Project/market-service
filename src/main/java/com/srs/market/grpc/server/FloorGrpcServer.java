@@ -1,5 +1,6 @@
 package com.srs.market.grpc.server;
 
+import com.srs.common.FindByIdRequest;
 import com.srs.common.NoContentResponse;
 import com.srs.market.*;
 import com.srs.market.grpc.service.FloorGrpcService;
@@ -90,4 +91,14 @@ public class FloorGrpcServer extends FloorServiceGrpc.FloorServiceImplBase {
             responseObserver.onCompleted();
             throw e;
         }    }
+
+    @Override
+    public void getPublishedFloor(GetPublishedFloorRequest request, StreamObserver<GetFloorResponse> responseObserver) {
+        super.getPublishedFloor(request, responseObserver);
+    }
+
+    @Override
+    public void listPublishedFloors(FindByIdRequest request, StreamObserver<ListFloorsResponse> responseObserver) {
+        super.listPublishedFloors(request, responseObserver);
+    }
 }
