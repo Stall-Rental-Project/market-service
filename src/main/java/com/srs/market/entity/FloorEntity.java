@@ -31,6 +31,8 @@ public class FloorEntity {
     private String image;
 
     @Column(nullable = false)
+    private String imageUrl;
+    @Column(nullable = false)
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

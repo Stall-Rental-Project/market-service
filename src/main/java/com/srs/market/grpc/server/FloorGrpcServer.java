@@ -18,13 +18,13 @@ import net.devh.boot.grpc.server.service.GrpcService;
 public class FloorGrpcServer extends FloorServiceGrpc.FloorServiceImplBase {
     private final FloorGrpcService floorGrpcService;
     @Override
-    public void createFloor(CreateFloorRequest request, StreamObserver<CreateFloorResponse> responseObserver) {
+    public void createFloor(UpsertFloorRequest request, StreamObserver<UpsertFloorResponse> responseObserver) {
         try {
             var principal = GrpcPrincipalProvider.getGrpcPrincipal();
             responseObserver.onNext(floorGrpcService.createFloor(request, principal));
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onNext(CreateFloorResponse.newBuilder()
+            responseObserver.onNext(UpsertFloorResponse.newBuilder()
                     .setSuccess(false)
                     .setError(GrpcExceptionUtil.asGrpcError(e))
                     .build());
@@ -33,13 +33,13 @@ public class FloorGrpcServer extends FloorServiceGrpc.FloorServiceImplBase {
         }    }
 
     @Override
-    public void updateFloor(UpdateFloorRequest request, StreamObserver<UpdateFloorResponse> responseObserver) {
+    public void updateFloor(UpsertFloorRequest request, StreamObserver<UpsertFloorResponse> responseObserver) {
         try {
             var principal = GrpcPrincipalProvider.getGrpcPrincipal();
             responseObserver.onNext(floorGrpcService.updateFloor(request, principal));
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onNext(UpdateFloorResponse.newBuilder()
+            responseObserver.onNext(UpsertFloorResponse.newBuilder()
                     .setSuccess(false)
                     .setError(GrpcExceptionUtil.asGrpcError(e))
                     .build());

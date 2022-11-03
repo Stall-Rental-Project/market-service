@@ -6,9 +6,9 @@ import com.srs.market.*;
 import com.srs.proto.dto.GrpcPrincipal;
 
 public interface FloorGrpcService {
-    CreateFloorResponse createFloor(CreateFloorRequest request, GrpcPrincipal principal);
+    UpsertFloorResponse createFloor(UpsertFloorRequest request, GrpcPrincipal principal);
 
-    UpdateFloorResponse updateFloor(UpdateFloorRequest request, GrpcPrincipal principal);
+    UpsertFloorResponse updateFloor(UpsertFloorRequest request, GrpcPrincipal principal);
 
     GetFloorResponse getFloor(GetFloorRequest request, GrpcPrincipal principal);
 

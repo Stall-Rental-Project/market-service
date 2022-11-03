@@ -16,6 +16,7 @@ import com.srs.market.repository.*;
 import com.srs.proto.dto.GrpcPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.kafka.common.requests.UpdateFeaturesRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -40,11 +41,11 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
 
 
     @Override
-    public CreateFloorResponse createFloor(CreateFloorRequest request, GrpcPrincipal principal) {
+    public UpsertFloorResponse createFloor(UpsertFloorRequest request, GrpcPrincipal principal) {
         var errors = requestValidator.validate(request);
 
         if (!ErrorCode.SUCCESS.equals(errors.getCode())) {
-            return CreateFloorResponse.newBuilder()
+            return UpsertFloorResponse.newBuilder()
                     .setSuccess(false)
                     .setError(errors)
                     .build();
@@ -57,7 +58,7 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
 
         if (fetchedMarket.isDeleted()) {
             log.error("Market has been marked as deleted");
-            return CreateFloorResponse.newBuilder()
+            return UpsertFloorResponse.newBuilder()
                     .setSuccess(false)
                     .setError(Error.newBuilder()
                             .setCode(ErrorCode.CANNOT_EXECUTE)
@@ -78,7 +79,7 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
             if (primaryMarket.isDeleted()) {
                 log.error("Market not found has been marked as deleted");
 
-                return CreateFloorResponse.newBuilder()
+                return UpsertFloorResponse.newBuilder()
                         .setSuccess(false)
                         .setError(Error.newBuilder()
                                 .setCode(ErrorCode.CANNOT_EXECUTE)
@@ -103,9 +104,9 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
 
         floorStallIndexRepository.save(floorIndex);
 
-        return CreateFloorResponse.newBuilder()
+        return UpsertFloorResponse.newBuilder()
                 .setSuccess(true)
-                .setData(CreateFloorResponse.Data.newBuilder()
+                .setData(UpsertFloorResponse.Data.newBuilder()
                         .setMarketId(market.getMarketId().toString())
                         .setFloorplanId(floor.getFloorId().toString())
                         .build())
@@ -113,11 +114,11 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
     }
 
     @Override
-    public UpdateFloorResponse updateFloor(UpdateFloorRequest request, GrpcPrincipal principal) {
+    public UpsertFloorResponse updateFloor(UpsertFloorRequest request, GrpcPrincipal principal) {
         var errors = requestValidator.validate(request);
 
         if (!ErrorCode.SUCCESS.equals(errors.getCode())) {
-            return UpdateFloorResponse.newBuilder()
+            return UpsertFloorResponse.newBuilder()
                     .setSuccess(false)
                     .setError(errors)
                     .build();
@@ -131,7 +132,7 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
         if (fetchedFloor.isDeleted()) {
             log.error("Floor has been marked as deleted");
 
-            return UpdateFloorResponse.newBuilder()
+            return UpsertFloorResponse.newBuilder()
                     .setSuccess(false)
                     .setError(Error.newBuilder()
                             .setCode(ErrorCode.CANNOT_EXECUTE)
@@ -277,30 +278,34 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
         return asGrpcFloorList(market, floors, request.getDraft());
     }
 
-    private UpdateFloorResponse doUpdateFloorMetadata(FloorEntity floor, UpdateFloorRequest request, GrpcPrincipal principal) {
+    private UpsertFloorResponse doUpdateFloorMetadata(FloorEntity floor, UpsertFloorRequest request, GrpcPrincipal principal) {
 
         this.updateFloorMetadata(floor, request);
 
         var created = floorRepository.save(floor);
 
 
-        return UpdateFloorResponse.newBuilder()
+        return UpsertFloorResponse.newBuilder()
                 .setSuccess(true)
-                .setData(UpdateFloorResponse.Data.newBuilder()
+                .setData(UpsertFloorResponse.Data.newBuilder()
                         .setFloorplanId(created.getFloorId().toString()))
                 .build();
     }
 
-    private boolean updateFloorMetadata(FloorEntity floor, UpdateFloorRequest request) {
+    private boolean updateFloorMetadata(FloorEntity floor, UpsertFloorRequest request) {
         boolean hasChanged = false;
 
-        if (StringUtils.hasText(request.getName()) && !Objects.equals(floor.getName(), request.getName())) {
-            floor.setName(request.getName());
+        if (StringUtils.hasText(request.getFloorName()) && !Objects.equals(floor.getName(), request.getFloorName())) {
+            floor.setName(request.getFloorName());
             hasChanged = true;
         }
 
-        if (StringUtils.hasText(request.getImage()) && !Objects.equals(floor.getImage(), request.getImage())) {
-            floor.setImage(request.getImage());
+        if (StringUtils.hasText(request.getImageUrl()) && !Objects.equals(floor.getImageUrl(), request.getImageUrl())) {
+            floor.setImageUrl(request.getImageUrl());
+            hasChanged = true;
+        }
+        if (StringUtils.hasText(request.getImageName()) && !Objects.equals(floor.getImage(), request.getImageName())) {
+            floor.setImage(request.getImageName());
             hasChanged = true;
         }
 
