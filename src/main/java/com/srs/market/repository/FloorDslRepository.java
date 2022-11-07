@@ -3,9 +3,11 @@ package com.srs.market.repository;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.srs.market.FloorState;
 import com.srs.market.StallState;
 import com.srs.market.entity.FloorEntity;
 import com.srs.market.entity.QFloorEntity;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 @Log4j2
@@ -169,5 +172,34 @@ public class FloorDslRepository {
             log.info("Floor with id {} is draft version or has draft version. Returns the primary version", floorplanId);
             return floors.stream().filter(s -> s.getPreviousVersion() == null).findFirst();
         }
+    }
+
+    public List<FloorEntity> findAllPublishedByMarketId4List(UUID marketId) {
+        BooleanExpression isPublishedAndNotDeleted = floor.deleted.isFalse().and(floor.state.eq(FloorState.FLOOR_STATE_PUBLISHED_VALUE));
+        BooleanExpression isDeletedButNotRepublished = floor.deleted.isTrue().and(floor.publishedAtLeastOnce.isTrue()).and(floor.state.eq(FloorState.FLOOR_STATE_UNPUBLISHED_VALUE));
+
+        JPAQuery<FloorEntity> query = queryFactory.select(floor)
+                .from(floor)
+                .where(floor.market.marketId.in(
+                                queryFactory.select(market.marketId)
+                                        .from(market)
+                                        .where(market.marketId.eq(marketId).or(market.previousVersion.eq(marketId)))
+                                        .where(market.deleted.eq(false))
+                        )
+                )
+                .where(isPublishedAndNotDeleted.or(isDeletedButNotRepublished))
+                .orderBy(new OrderSpecifier<>(Order.ASC, floor.name));
+
+        List<FloorEntity> entities = query.fetch();
+
+        Set<UUID> primaryIds = entities.stream()
+                .filter(f -> f.getPreviousVersion() == null)
+                .map(FloorEntity::getFloorId)
+                .collect(Collectors.toSet());
+
+        return entities.stream()
+                .filter(f -> primaryIds.contains(f.getFloorId()))
+                .collect(Collectors.toList());
+
     }
 }

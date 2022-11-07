@@ -102,11 +102,31 @@ public class MarketGrpcServer extends MarketServiceGrpc.MarketServiceImplBase {
 
     @Override
     public void publishMarket(FindByIdRequest request, StreamObserver<NoContentResponse> responseObserver) {
-        super.publishMarket(request, responseObserver);
-    }
+        try {
+            var principal = GrpcPrincipalProvider.getGrpcPrincipal();
+            responseObserver.onNext(marketGrpcService.publishMarket(request, principal));
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onNext(NoContentResponse.newBuilder()
+                    .setSuccess(false)
+                    .setError(GrpcExceptionUtil.asGrpcError(e))
+                    .build());
+            responseObserver.onCompleted();
+            throw e;
+        }    }
 
     @Override
     public void countStalls(FindByIdRequest request, StreamObserver<CountStallsResponse> responseObserver) {
-        super.countStalls(request, responseObserver);
-    }
+        try {
+            var principal = GrpcPrincipalProvider.getGrpcPrincipal();
+            responseObserver.onNext(marketGrpcService.countStalls(request, principal));
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onNext(CountStallsResponse.newBuilder()
+                    .setSuccess(false)
+                    .setError(GrpcExceptionUtil.asGrpcError(e))
+                    .build());
+            responseObserver.onCompleted();
+            throw e;
+        }    }
 }

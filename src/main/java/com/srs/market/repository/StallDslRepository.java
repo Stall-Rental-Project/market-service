@@ -1,8 +1,11 @@
 package com.srs.market.repository;
 
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.srs.market.StallState;
 import com.srs.market.dto.projection.StallCodeProjection;
 import com.srs.market.entity.QStallEntity;
 import com.srs.market.entity.StallEntity;
@@ -103,6 +106,21 @@ public class StallDslRepository {
                 .where(stall.stallId.eq(stallId));
 
         return query.fetchOne();
+    }
+
+    public List<Tuple> findAllStatusOfStallsInMarket(UUID marketId) {
+        var query = queryFactory.select(stall.stallId, stall.leaseStatus)
+                .from(stall)
+                .where(stall.market.marketId.eq(marketId))
+                .where(Expressions.anyOf(
+                        stall.deleted.isFalse()
+                                .and(stall.state.eq(StallState.STALL_STATE_PUBLISHED_VALUE)),
+                        stall.deleted.isTrue()
+                                .and(stall.publishedAtLeastOnce.isTrue())
+                                .and(stall.state.eq(StallState.STALL_STATE_UNPUBLISHED_VALUE))
+                ));
+
+        return query.fetch();
     }
 
 }

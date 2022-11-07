@@ -5,9 +5,7 @@ import com.srs.common.Error;
 import com.srs.common.*;
 import com.srs.market.*;
 import com.srs.market.common.Constant;
-import com.srs.market.entity.LocationEntity;
-import com.srs.market.entity.MarketEntity;
-import com.srs.market.entity.SupervisorEntity;
+import com.srs.market.entity.*;
 import com.srs.market.exception.ObjectNotFoundException;
 import com.srs.market.grpc.mapper.LocationGrpcMapper;
 import com.srs.market.grpc.mapper.MarketGrpcMapper;
@@ -36,10 +34,12 @@ public class MarketGrpcServiceImpl implements MarketGrpcService {
     private final MarketRepository marketRepository;
     private final LocationRepository locationRepository;
     private final SupervisorRepository supervisorRepository;
+    private final StallRepository stallRepository;
 
+    private final FloorRepository floorRepository;
     private final MarketDslRepository marketDslRepository;
     private final LocationDslRepository locationDslRepository;
-
+    private final StallDslRepository stallDslRepository;
 
     private final MarketGrpcMapper marketGrpcMapper;
     private final SupervisorGrpcMapper supervisorGrpcMapper;
@@ -489,4 +489,326 @@ public class MarketGrpcServiceImpl implements MarketGrpcService {
         return hasChanged;
     }
 
+    @Override
+    public CountStallsResponse countStalls(FindByIdRequest request, GrpcPrincipal principal) {
+        var marketId = UUID.fromString(request.getId());
+        var markets = marketRepository.findAllVersionsById(marketId);
+
+        var market = this.getPrimaryMarket(markets);
+
+        var stallLeaseStatuses = stallDslRepository.findAllStatusOfStallsInMarket(market.getMarketId());
+
+        var stallCounter = marketUtil.countAndGroupStallsByLeaseStatus(stallLeaseStatuses);
+
+        var totalStalls = stallCounter.getTotalStalls();
+        var availableStalls = stallCounter.getAvailableStalls();
+        var occupiedStalls = stallCounter.getOccupiedStalls();
+
+        return CountStallsResponse.newBuilder()
+                .setSuccess(true)
+                .setData(CountStallsResponse.Data.newBuilder()
+                        .setTotalStalls(totalStalls)
+                        .setAvailableStalls(availableStalls)
+                        .setOccupiedStalls(occupiedStalls)
+                        .build())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public NoContentResponse publishMarket(FindByIdRequest request, GrpcPrincipal principal) {
+
+        var errors = marketRequestValidator.validate(request, principal.getUserId());
+
+        if (!ErrorCode.SUCCESS.equals(errors.getCode())) {
+            return NoContentResponse.newBuilder()
+                    .setSuccess(false)
+                    .setError(errors)
+                    .build();
+        }
+
+        var marketId = UUID.fromString(request.getId());
+
+        var markets = marketRepository.findAllVersionsById(marketId);
+
+        if (markets.isEmpty() || markets.stream().allMatch(MarketEntity::isDeleted)) {
+            if (markets.size() > 0 && markets.stream().allMatch(MarketEntity::isDeleted)) {
+                log.error("Market has been marked as deleted");
+            }
+
+            return NoContentResponse.newBuilder()
+                    .setSuccess(false)
+                    .setError(Error.newBuilder()
+                            .setCode(ErrorCode.CANNOT_EXECUTE)
+                            .setMessage("Cannot publish market")
+                            .putDetails("market_id", "Market not exists with given market_id")
+                            .build())
+                    .build();
+        }
+
+        log.info("Preparing to publish market");
+
+        var primary = this.getPrimaryMarket(markets);
+        var draft = this.getDraftMarket(markets);
+
+        if (primary.getState() == MarketState.MARKET_STATE_PUBLISHED_VALUE) {
+            doPublishMarket(primary, draft);
+        } else {
+           doPublishMarketFirstTime(primary,draft);
+        }
+
+        return NoContentResponse.newBuilder()
+                .setSuccess(true)
+                .build();
+    }
+
+    private void doPublishMarket(MarketEntity primary, MarketEntity draft) {
+        Map<UUID, StallEntity> publishedStalls = new HashMap<>();
+        Map<UUID, StallEntity> deletedStalls = new HashMap<>();
+
+        Map<UUID, FloorEntity> publishedFloors = new HashMap<>();
+        Map<UUID, FloorEntity> deletedFloors = new HashMap<>();
+
+        var floors = floorRepository.findAllByMarketId(primary.getMarketId());
+        var floorMap = new HashMap<UUID, FloorEntity>();
+        var primaryToDraftFloorIds = new HashMap<UUID, UUID>();
+        for (var floor : floors) {
+            var floorId = floor.getFloorId();
+            floorMap.put(floorId, floor);
+            if (floor.getPreviousVersion() != null) {
+                primaryToDraftFloorIds.put(floor.getPreviousVersion(), floorId);
+            }
+
+            floor.setMarket(draft);
+
+        }
+
+        var stalls = stallRepository.findAllByMarketId(primary.getMarketId());
+        var stallMap = new HashMap<UUID, StallEntity>();
+        var primaryToDraftStallIds = new HashMap<UUID, UUID>();
+        var floorStallMap = new HashMap<UUID, List<StallEntity>>();
+        for (var stall : stalls) {
+            var stallId = stall.getStallId();
+            stallMap.put(stallId, stall);
+
+            if (stall.getPreviousVersion() != null) {
+                primaryToDraftStallIds.put(stall.getPreviousVersion(), stallId);
+            }
+
+            var floorId = stall.getFloor().getFloorId();
+            if (!floorStallMap.containsKey(floorId)) {
+                floorStallMap.put(floorId, new ArrayList<>());
+            }
+            floorStallMap.get(floorId).add(stall);
+
+            stall.setMarket(draft);
+        }
+
+
+        for (var floorEntity : floors) {
+            var floorId = floorEntity.getFloorId();
+            var floor = floorMap.get(floorId);
+
+            if (floor == null) {
+                throw new ObjectNotFoundException("Floor " + floorId + " not found");
+            }
+
+            var draftFloorId = primaryToDraftFloorIds.get(floorId);
+            var draftFloor = floorMap.get(draftFloorId);
+
+            var floorStalls = floorStallMap.get(floorId);
+
+            if (!CollectionUtils.isEmpty(floorStalls)) {
+                for (var stall : floorStalls) {
+                    if (primaryToDraftStallIds.containsKey(stall.getStallId())) {
+                        deletedStalls.put(stall.getStallId(), stall);
+                    } else {
+                        stall.setState(StallState.STALL_STATE_PUBLISHED_VALUE);
+                        stall.setPublishedAtLeastOnce(true);
+                        stall.setPreviousVersion(null);
+                        stall.setClonedFrom(null);
+                        if (draftFloor != null) {
+                            stall.setFloor(draftFloor);
+                        }
+                        stall.setMarket(draft);
+
+                        if (!deletedStalls.containsKey(stall.getStallId())) {
+                            publishedStalls.put(stall.getStallId(), stall);
+                        }
+                    }
+                }
+            }
+
+            if (draftFloor != null) {
+                draftFloor.setState(FloorState.FLOOR_STATE_PUBLISHED_VALUE);
+                draftFloor.setPublishedAtLeastOnce(true);
+                draftFloor.setPreviousVersion(null);
+                draftFloor.setMarket(draft);
+
+                publishedFloors.put(draftFloor.getFloorId(), draftFloor);
+                deletedFloors.put(floor.getFloorId(), floor);
+            } else {
+                floor.setState(FloorState.FLOOR_STATE_PUBLISHED_VALUE);
+                floor.setPublishedAtLeastOnce(true);
+                floor.setMarket(draft);
+                publishedFloors.put(floor.getFloorId(), floor);
+            }
+
+        }
+
+        for (var stallEntity : stalls) {
+            var stallId = stallEntity.getStallId();
+            var stall = stallMap.get(stallId);
+
+            if (stall == null) {
+                throw new ObjectNotFoundException("Stall " + stallId + " not found");
+            }
+
+            var draftStallId = primaryToDraftStallIds.get(stallId);
+            var draftStall = stallMap.get(draftStallId);
+
+            if (draftStall != null) {
+                draftStall.setState(StallState.STALL_STATE_PUBLISHED_VALUE);
+                draftStall.setPublishedAtLeastOnce(true);
+                draftStall.setPreviousVersion(null);
+                draftStall.setClonedFrom(null);
+                draftStall.setMarket(draft);
+
+                publishedStalls.put(draftStall.getStallId(), draftStall);
+                deletedStalls.put(stall.getStallId(), stall);
+            } else {
+                stall.setState(StallState.STALL_STATE_PUBLISHED_VALUE);
+                stall.setPublishedAtLeastOnce(true);
+                stall.setClonedFrom(null);
+                stall.setMarket(draft);
+
+                publishedStalls.put(stall.getStallId(), stall);
+            }
+        }
+
+
+        draft.setState(MarketState.MARKET_STATE_PUBLISHED_VALUE);
+        draft.setPreviousVersion(null);
+
+        log.info(String.format(
+                "Delete: %d stalls, %d floors. Publish: %d stalls, %d floors",
+                deletedStalls.size(), deletedFloors.size(),
+                publishedStalls.size(), publishedFloors.size()
+        ));
+
+
+        var otherFloors = floors.stream()
+                .filter(f -> !publishedFloors.containsKey(f.getFloorId()))
+                .filter(f -> !deletedFloors.containsKey(f.getFloorId()))
+                .collect(Collectors.toList());
+
+        floorRepository.saveAll(otherFloors);
+
+        var otherStalls = stalls.stream()
+                .filter(s -> !publishedStalls.containsKey(s.getStallId()))
+                .filter(s -> !deletedStalls.containsKey(s.getStallId()))
+                .collect(Collectors.toList());
+        stallRepository.saveAll(otherStalls);
+
+
+        floorRepository.saveAll(publishedFloors.values());
+        stallRepository.saveAll(publishedStalls.values());
+
+        floorRepository.deleteAll(deletedFloors.values());
+        stallRepository.deleteAll(deletedStalls.values());
+
+        log.info("There are updates on market. Promoting new market version");
+        marketRepository.save(draft);
+        marketRepository.delete(primary);
+    }
+
+    private void doPublishMarketFirstTime(MarketEntity primary,MarketEntity draft){
+        var floors = floorRepository.findAllByMarketId(primary.getMarketId());
+
+        var primaryFloors = new HashMap<UUID, FloorEntity>();
+        var draftFloors = new HashMap<UUID, FloorEntity>();
+        var originFloors = new HashMap<UUID, FloorEntity>();
+        var primaryToDraftFloorIds = new HashMap<UUID /*primary*/, UUID /*draftId*/>();
+
+        for (var floor : floors) {
+            if (!floor.isPrimaryVersion()) {
+                draftFloors.put(floor.getFloorId(), floor);
+                primaryFloors.put(floor.getPreviousVersion(), null);
+                primaryToDraftFloorIds.put(floor.getPreviousVersion(), floor.getFloorId());
+            }
+        }
+
+        for (var floor : floors) {
+            if (primaryFloors.containsKey(floor.getFloorId())) {
+                primaryFloors.put(floor.getFloorId(), floor);
+            } else {
+                originFloors.put(floor.getFloorId(), floor);
+            }
+        }
+
+        var publishedFloors = new ArrayList<FloorEntity>();
+        publishedFloors.addAll(draftFloors.values());
+        publishedFloors.addAll(originFloors.values());
+
+        var stalls = stallRepository.findAllByMarketId(primary.getMarketId());
+
+        var primaryStalls = new HashMap<UUID, StallEntity>();
+        var draftStalls = new HashMap<UUID, StallEntity>();
+        var originStalls = new HashMap<UUID, StallEntity>();
+
+        for (var stall : stalls) {
+            if (!stall.isPrimaryVersion()) {
+                draftStalls.put(stall.getStallId(), stall);
+                primaryStalls.put(stall.getPreviousVersion(), null);
+            }
+        }
+
+        for (var stall : stalls) {
+            if (primaryStalls.containsKey(stall.getStallId())) {
+                primaryStalls.put(stall.getStallId(), stall);
+            } else {
+                originStalls.put(stall.getStallId(), stall);
+            }
+        }
+
+        var publishedStalls = new ArrayList<StallEntity>();
+        publishedStalls.addAll(draftStalls.values());
+        publishedStalls.addAll(originStalls.values());
+
+        for (var stall : publishedStalls) {
+            stall.setState(StallState.STALL_STATE_PUBLISHED_VALUE);
+            stall.setPublishedAtLeastOnce(true);
+            if (primaryToDraftFloorIds.containsKey(stall.getFloor().getFloorId())) {
+                var primaryFloorId = stall.getFloor().getFloorId();
+                var draftFloorId = primaryToDraftFloorIds.get(primaryFloorId);
+                var draftFloor = draftFloors.get(draftFloorId);
+                stall.setFloor(draftFloor);
+            }
+            if (draft != null) {
+                stall.setMarket(draft);
+            }
+        }
+        stallRepository.saveAll(publishedStalls);
+        stallRepository.deleteAll(primaryStalls.values());
+
+        for (var floor : publishedFloors) {
+            floor.setState(FloorState.FLOOR_STATE_PUBLISHED_VALUE);
+            floor.setPublishedAtLeastOnce(true);
+            if (draft != null) {
+                floor.setMarket(draft);
+            }
+        }
+        floorRepository.saveAll(publishedFloors);
+        floorRepository.deleteAll(primaryFloors.values());
+
+        if (draft != null) {
+            draft.setPreviousVersion(null);
+            draft.setState(MarketState.MARKET_STATE_PUBLISHED_VALUE);
+            marketRepository.save(draft);
+            marketRepository.delete(primary);
+        } else {
+            primary.setState(MarketState.MARKET_STATE_PUBLISHED_VALUE);
+            marketRepository.save(primary);
+        }
+    }
 }

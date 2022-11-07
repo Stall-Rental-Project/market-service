@@ -46,7 +46,7 @@ public class FloorRequestValidationImpl extends AbstractRequestValidator impleme
             addMissingRequiredError("image_url", errors);
         }
 
-        if (!StringUtils.hasText(request.getFloorplanId())) {
+        if (StringUtils.hasText(request.getFloorplanId())) {
 
             List<RefIdProjection> refs = floorRepository.findAllByNameIgnoreCaseAndFloorIdIsNot(request.getFloorName(), UUID.fromString(request.getFloorplanId()));
 

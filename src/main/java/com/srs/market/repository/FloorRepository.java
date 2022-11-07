@@ -20,6 +20,10 @@ public interface FloorRepository extends JpaRepository<FloorEntity,UUID> {
             "where f.floorId = :id and f.deleted = false")
     void softDeleteById(@Param("id") UUID id);
 
+    @Query("select f from FloorEntity f " +
+            "where f.market.marketId = :id")
+    List<FloorEntity> findAllByMarketId(@Param("id") UUID marketId);
+
 
     boolean existsByMarketMarketIdAndNameIgnoreCaseAndDeletedIsFalse(UUID marketId, String floor);
 
@@ -55,4 +59,5 @@ public interface FloorRepository extends JpaRepository<FloorEntity,UUID> {
             "and s.deleted = false " +
             "group by s.floor.floorId")
     List<FloorStallCountProjection> countTotalStalls4EachFloorInMarket(@Param("marketId") UUID marketId);
+
 }

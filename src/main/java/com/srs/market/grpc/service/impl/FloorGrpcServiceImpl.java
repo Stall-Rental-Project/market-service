@@ -2,8 +2,11 @@ package com.srs.market.grpc.service.impl;
 
 import com.srs.common.Error;
 import com.srs.common.ErrorCode;
+import com.srs.common.FindByIdRequest;
 import com.srs.common.NoContentResponse;
 import com.srs.market.*;
+import com.srs.market.dto.projection.FloorStallCountProjection;
+import com.srs.market.dto.projection.StallWithDetailProjection;
 import com.srs.market.entity.FloorEntity;
 import com.srs.market.entity.FloorStallIndexEntity;
 import com.srs.market.entity.MarketEntity;
@@ -16,7 +19,6 @@ import com.srs.market.repository.*;
 import com.srs.proto.dto.GrpcPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.kafka.common.requests.UpdateFeaturesRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -331,6 +333,110 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
                     .setTotalStalls(stallCount.getOrDefault(floorId, 0L))
                     .setStallWithDetail(stallHasDetailCount.getOrDefault(floorId, 0L))
                     .build());
+        }
+
+        return ListFloorsResponse.newBuilder()
+                .setSuccess(true)
+                .setData(ListFloorsResponse.Data.newBuilder()
+                        .addAllFloors(grpcFloors)
+                        .build())
+                .build();
+    }
+
+    @Override
+    public ListFloorsResponse listPublishedFloors(FindByIdRequest request, GrpcPrincipal principal) {
+        var market = marketRepository.findByMarketIdAndDeletedIsFalse(UUID.fromString(request.getId()))
+                .orElseThrow(() -> new ObjectNotFoundException("Market not found with id " + request.getId()));
+
+        if (!market.isPrimaryVersion()) {
+            log.info("Market ID is of draft version. Getting the primary one");
+            market = marketRepository.findByMarketIdAndDeletedIsFalse(market.getPreviousVersion())
+                    .orElseThrow(() -> new ObjectNotFoundException("Market not found with id " + request.getId()));
+        }
+
+        var floors = floorDslRepository.findAllPublishedByMarketId4List(market.getMarketId());
+
+        return asGrpcFloorList(market, floors);
+    }
+
+    @Override
+    public GetFloorResponse getPublishedFloor(GetPublishedFloorRequest request, GrpcPrincipal principal) {
+        var floorId = UUID.fromString(request.getId());
+        var floor = floorRepository.findById(floorId)
+                .orElseThrow(() -> new ObjectNotFoundException("Floor not found with id " + request.getId()));
+
+        if (!floor.isPrimaryVersion()) {
+            floor = floorRepository.findById(floor.getPreviousVersion())
+                    .orElseThrow(() -> new ObjectNotFoundException("Floor not found with id " + request.getId()));
+        }
+
+        if (floor.getState() != FloorState.FLOOR_STATE_PUBLISHED_VALUE ) {
+            throw new ObjectNotFoundException("Floor has not been published yet");
+        }
+
+        var grpcFloor = floorGrpcMapper.toGrpcBuilder(floor);
+
+        var stalls = stallRepository.findAllPublishedStallsByFloorId(floor.getFloorId()).stream()
+                .map(stall -> stallGrpcMapper.toGrpcMessage(stall, true))
+                .collect(Collectors.toUnmodifiableList());
+
+        grpcFloor.addAllStalls(stalls)
+                .setTotalStalls(stalls.size())
+                .build();
+
+        return GetFloorResponse.newBuilder()
+                .setSuccess(true)
+                .setData(GetFloorResponse.Data.newBuilder()
+                        .setFloor(grpcFloor)
+                        .build())
+                .build();
+    }
+
+    private ListFloorsResponse asGrpcFloorList(MarketEntity market, List<FloorEntity> floors) {
+        var totalStallCounters = floorRepository.countTotalStalls4EachFloorInMarket(market.getMarketId());
+
+        var primaryStallsWithDetailChecks = stallRepository.checkPrimaryStallThatHasDetail(market.getMarketId());
+        var draftStallsWithDetailChecks = stallRepository.checkDraftStallThatHasDetail(market.getMarketId());
+
+        Map<UUID /*stallId*/, Boolean /*numStallWithDetail*/> draftStallWithDetailMap = draftStallsWithDetailChecks.stream()
+                .collect(Collectors.toMap(StallWithDetailProjection::getRefId, s -> StringUtils.hasText(s.getName())));
+        Map<UUID /*floorId*/, Long /*numStallWithDetail*/> stallWithDetailMap = new HashMap<>();
+
+        for (var projection : primaryStallsWithDetailChecks) {
+            var floorId = projection.getFloorId();
+            var stallId = projection.getStallId();
+            var stallName = projection.getName();
+
+            if (!stallWithDetailMap.containsKey(floorId)) {
+                stallWithDetailMap.put(floorId, 0L);
+            }
+
+            if (StringUtils.hasText(stallName) || Boolean.TRUE.equals(draftStallWithDetailMap.get(stallId))) {
+                stallWithDetailMap.put(floorId, stallWithDetailMap.get(floorId) + 1);
+            }
+        }
+
+        Map<UUID, Long> totalStallMap = totalStallCounters.stream()
+                .collect(Collectors.toMap(FloorStallCountProjection::getFloorplanId, FloorStallCountProjection::getNumStalls));
+
+        List<Floor> grpcFloors = new ArrayList<>();
+        for (var floor : floors) {
+            var floorId = floor.getFloorId();
+            var totalStalls = totalStallMap.getOrDefault(
+                    floorId,
+                    totalStallMap.getOrDefault(floor.getPreviousVersion(), 0L)
+            );
+            var totalStallsWithDetail = stallWithDetailMap.getOrDefault(
+                    floorId,
+                    stallWithDetailMap.getOrDefault(floor.getPreviousVersion(), 0L)
+            );
+
+            var grpcFloor = floorGrpcMapper.toGrpcBuilder(floor)
+                    .setTotalStalls(totalStalls)
+                    .setStallWithDetail(totalStallsWithDetail)
+                    .build();
+
+            grpcFloors.add(grpcFloor);
         }
 
         return ListFloorsResponse.newBuilder()

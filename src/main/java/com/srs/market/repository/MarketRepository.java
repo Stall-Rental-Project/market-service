@@ -71,4 +71,17 @@ public interface MarketRepository extends JpaRepository<MarketEntity, UUID> {
 
     Optional<MarketEntity> findByMarketIdAndDeletedIsFalse(UUID marketId);
 
+
+    @Query("select m from MarketEntity m " +
+            "join fetch m.location " +
+            "where (m.marketId = :id " +
+            "       or m.previousVersion = :id " +
+            "       or m.marketId = (select mm.previousVersion " +
+            "                        from MarketEntity mm " +
+            "                        where mm.marketId = :id)" +
+            ")" +
+            "and (m.deleted = false " +
+            "     or (m.deleted = true and m.state = 1)" +
+            ")")
+    List<MarketEntity> findAllPublishableMarketsById(@Param("id") UUID marketId);
 }

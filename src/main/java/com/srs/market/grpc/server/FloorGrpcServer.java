@@ -94,11 +94,31 @@ public class FloorGrpcServer extends FloorServiceGrpc.FloorServiceImplBase {
 
     @Override
     public void getPublishedFloor(GetPublishedFloorRequest request, StreamObserver<GetFloorResponse> responseObserver) {
-        super.getPublishedFloor(request, responseObserver);
-    }
+        try {
+            var principal = GrpcPrincipalProvider.getGrpcPrincipal();
+            responseObserver.onNext(floorGrpcService.getPublishedFloor(request, principal));
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onNext(GetFloorResponse.newBuilder()
+                    .setSuccess(false)
+                    .setError(GrpcExceptionUtil.asGrpcError(e))
+                    .build());
+            responseObserver.onCompleted();
+            throw e;
+        }    }
 
     @Override
     public void listPublishedFloors(FindByIdRequest request, StreamObserver<ListFloorsResponse> responseObserver) {
-        super.listPublishedFloors(request, responseObserver);
-    }
+        try {
+            var principal = GrpcPrincipalProvider.getGrpcPrincipal();
+            responseObserver.onNext(floorGrpcService.listPublishedFloors(request, principal));
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onNext(ListFloorsResponse.newBuilder()
+                    .setSuccess(false)
+                    .setError(GrpcExceptionUtil.asGrpcError(e))
+                    .build());
+            responseObserver.onCompleted();
+            throw e;
+        }    }
 }

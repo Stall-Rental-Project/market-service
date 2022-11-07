@@ -17,4 +17,9 @@ public interface MarketGrpcService {
     UpdateMarketResponse updateMarket(UpsertMarketRequest request, GrpcPrincipal principal);
 
     NoContentResponse deleteMarket(FindByIdRequest request, GrpcPrincipal principal);
+
+    CountStallsResponse countStalls(FindByIdRequest request, GrpcPrincipal principal);
+
+    NoContentResponse publishMarket(FindByIdRequest request, GrpcPrincipal principal);
+
 }

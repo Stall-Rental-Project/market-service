@@ -14,6 +14,10 @@ import java.util.UUID;
 
 @Repository
 public interface StallRepository extends JpaRepository<StallEntity, UUID> {
+    @Query("select s from StallEntity s " +
+            "where s.market.marketId = :id ")
+    List<StallEntity> findAllByMarketId(@Param("id") UUID primaryId);
+
     @Modifying
     @Query("update StallEntity s set s.deleted = true, s.state = 1 " +
             "where s.floor.floorId = :id " +
@@ -62,4 +66,17 @@ public interface StallRepository extends JpaRepository<StallEntity, UUID> {
             "   or (s.deleted = true and s.state = 1 and s.publishedAtLeastOnce = true)" +
             ")")
     Optional<StallEntity> findById4SubmitApplication(@Param("id") UUID fromString);
+
+    @Query("select s from StallEntity s " +
+            "where s.floor.floorId = :id ")
+    List<StallEntity> findAllByFloorId(@Param("id") UUID primaryId);
+
+    @Query("select s from StallEntity s " +
+            "where s.floor.floorId = :id " +
+            "and s.previousVersion is null " +
+            "and (" +
+            "   (s.state = 2 and s.deleted = false) " +
+            "   or (s.state = 1 and s.deleted = true and s.publishedAtLeastOnce = true)" +
+            ")")
+    List<StallEntity> findAllPublishedStallsByFloorId(@Param("id") UUID floorplanId);
 }

@@ -14,5 +14,9 @@ public interface FloorGrpcService {
 
     NoContentResponse deleteFloor(DeleteFloorRequest request, GrpcPrincipal principal);
     ListFloorsResponse listFloors(ListFloorsRequest request, GrpcPrincipal principal);
+    ListFloorsResponse listPublishedFloors(FindByIdRequest request, GrpcPrincipal principal);
+
+    GetFloorResponse getPublishedFloor(GetPublishedFloorRequest request, GrpcPrincipal principal);
+
 
 }
