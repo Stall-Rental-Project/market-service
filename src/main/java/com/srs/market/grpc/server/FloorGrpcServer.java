@@ -121,4 +121,19 @@ public class FloorGrpcServer extends FloorServiceGrpc.FloorServiceImplBase {
             responseObserver.onCompleted();
             throw e;
         }    }
+
+    @Override
+    public void getFloorCodeAndMarketCode(FindByIdRequest request, StreamObserver<GetFloorCodeAndMarketCodeResponse> responseObserver) {
+        try {
+            var principal = GrpcPrincipalProvider.getGrpcPrincipal();
+            responseObserver.onNext(floorGrpcService.getFloorCodeAndMarketCode(request, principal));
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onNext(GetFloorCodeAndMarketCodeResponse.newBuilder()
+                    .setSuccess(false)
+                    .setError(GrpcExceptionUtil.asGrpcError(e))
+                    .build());
+            responseObserver.onCompleted();
+            throw e;
+        }    }
 }

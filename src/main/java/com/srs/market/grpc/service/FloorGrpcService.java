@@ -17,6 +17,6 @@ public interface FloorGrpcService {
     ListFloorsResponse listPublishedFloors(FindByIdRequest request, GrpcPrincipal principal);
 
     GetFloorResponse getPublishedFloor(GetPublishedFloorRequest request, GrpcPrincipal principal);
-
+    GetFloorCodeAndMarketCodeResponse getFloorCodeAndMarketCode(FindByIdRequest request, GrpcPrincipal principal);
 
 }

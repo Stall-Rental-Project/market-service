@@ -199,7 +199,7 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
 
     @Override
     @Transactional
-    public NoContentResponse deleteFloor(DeleteFloorRequest request, GrpcPrincipal principal) {
+    public NoContentResponse  deleteFloor(DeleteFloorRequest request, GrpcPrincipal principal) {
         var id = UUID.fromString(request.getFloorplanId());
 
         var floors = floorRepository.findAllById4Delete(id);
@@ -446,4 +446,20 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
                         .build())
                 .build();
     }
+
+    @Override
+    public GetFloorCodeAndMarketCodeResponse getFloorCodeAndMarketCode(FindByIdRequest request, GrpcPrincipal principal) {
+        var floorId = UUID.fromString(request.getId());
+        var tuple = floorDslRepository.findFloorCodeAndMarketCodeByFloorId(floorId)
+                .orElseThrow(() -> new ObjectNotFoundException("Floor not found"));
+
+        return GetFloorCodeAndMarketCodeResponse.newBuilder()
+                .setSuccess(true)
+                .setData(GetFloorCodeAndMarketCodeResponse.Data.newBuilder()
+                        .setFloorCode(tuple.get(0, String.class))
+                        .setMarketCode(tuple.get(1, String.class))
+                        .build())
+                .build();
+    }
+
 }

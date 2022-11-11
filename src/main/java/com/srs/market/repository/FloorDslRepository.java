@@ -202,4 +202,12 @@ public class FloorDslRepository {
                 .collect(Collectors.toList());
 
     }
+
+    public Optional<Tuple> findFloorCodeAndMarketCodeByFloorId(UUID floorId) {
+        var query = queryFactory.select(floor.code, floor.market.code)
+                .from(floor)
+                .where(floor.floorId.eq(floorId));
+
+        return Optional.ofNullable(query.fetchFirst());
+    }
 }
