@@ -1,6 +1,7 @@
 package com.srs.market.grpc.validator.impl;
 
 import com.srs.common.Error;
+import com.srs.common.FindByIdRequest;
 import com.srs.common.FindByIdsRequest;
 import com.srs.market.CreateStallRequest;
 import com.srs.market.UpdateStallMetadataRequest;
@@ -78,4 +79,14 @@ public class StallRequestValidatorImpl extends AbstractRequestValidator implemen
         return fromValidationResult(errors);
     }
 
+    @Override
+    public Error validate(FindByIdRequest request, UUID userId) {
+        Map<String, String> errors = new HashMap<>();
+
+        if (WebCommonUtil.isInvalidUUID(request.getId())) {
+            addInvalidValueError("stall_id", errors);
+        }
+        return fromValidationResult(errors);
+
+    }
 }

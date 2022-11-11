@@ -1,6 +1,7 @@
 package com.srs.market.grpc.server;
 
 import com.srs.common.FindByIdRequest;
+import com.srs.common.NoContentResponse;
 import com.srs.market.*;
 import com.srs.market.grpc.service.StallGrpcService;
 import com.srs.proto.intercepter.AuthGrpcInterceptor;
@@ -98,6 +99,49 @@ public class StallGrpcServer extends StallServiceGrpc.StallServiceImplBase {
         }
     }
 
+    @Override
+    public void deleteStall(FindByIdRequest request, StreamObserver<NoContentResponse> responseObserver) {
+        try {
+            var principal = GrpcPrincipalProvider.getGrpcPrincipal();
+            responseObserver.onNext(stallGrpcService.deleteStall(request, principal));
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onNext(NoContentResponse.newBuilder()
+                    .setSuccess(false)
+                    .setError(GrpcExceptionUtil.asGrpcError(e))
+                    .build());
+            responseObserver.onCompleted();
+            throw e;
+        }    }
 
-
+    @Override
+    public void getStallInfo(GetStallInfoRequest request, StreamObserver<GetStallInfoResponse> responseObserver) {
+        try {
+            var principal = GrpcPrincipalProvider.getGrpcPrincipal();
+            responseObserver.onNext(stallGrpcService.getStallInfo(request, principal));
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onNext(GetStallInfoResponse.newBuilder()
+                    .setSuccess(false)
+                    .setError(GrpcExceptionUtil.asGrpcError(e))
+                    .build());
+            responseObserver.onCompleted();
+            throw e;
+        }
+    }
+    @Override
+    public void listStallsInfo(ListStallsInfoRequest request, StreamObserver<ListStallsInfoResponse> responseObserver) {
+        try {
+            var principal = GrpcPrincipalProvider.getGrpcPrincipal();
+            responseObserver.onNext(stallGrpcService.listStallsInfo(request, principal));
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onNext(ListStallsInfoResponse.newBuilder()
+                    .setSuccess(false)
+                    .setError(GrpcExceptionUtil.asGrpcError(e))
+                    .build());
+            responseObserver.onCompleted();
+            throw e;
+        }
+    }
 }

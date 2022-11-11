@@ -7,10 +7,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Repository
 public interface StallRepository extends JpaRepository<StallEntity, UUID> {
@@ -79,4 +78,35 @@ public interface StallRepository extends JpaRepository<StallEntity, UUID> {
             "   or (s.state = 1 and s.deleted = true and s.publishedAtLeastOnce = true)" +
             ")")
     List<StallEntity> findAllPublishedStallsByFloorId(@Param("id") UUID floorplanId);
+
+    @Modifying
+    @Transactional
+    @Query("update StallEntity s set s.deleted = true, s.state = 1 " +
+            "where s.stallId = :id and s.previousVersion is null")
+    void softDeleteNonDraftVersionByIds(@Param("id") UUID stallId);
+
+    @Modifying
+    @Transactional
+    @Query("delete from StallEntity s " +
+            "where s.previousVersion in (:ids) " +
+            "or (s.stallId = :id " +
+            "and s.previousVersion is not null)")
+    void hardDeleteDraftVersionByIds(@Param("id") UUID stallId);
+
+    @Query("select s from StallEntity s " +
+            "join fetch s.market " +
+            "join fetch s.floor " +
+            "where s.previousVersion is null " +
+            "and s.clonedFrom is null " +
+            "and concat(coalesce(s.market.code, ''), coalesce(s.floor.code, ''), coalesce(s.code, '')) = :searcher")
+    Optional<StallEntity> findByMarketCodeAndFloorCodeAndStallCode(@Param("searcher") String searcher);
+
+
+    @Query("select s from StallEntity s " +
+            "join fetch s.market " +
+            "join fetch s.floor " +
+            "where s.previousVersion is null " +
+            "and s.clonedFrom is null " +
+            "and concat(coalesce(s.market.code, ''), coalesce(s.floor.code, ''), coalesce(s.code, '')) in (:collect)")
+    List<StallEntity> findAnd4Rent(@Param("collect") Collection<String> collect);
 }

@@ -3,6 +3,7 @@ package com.srs.market.grpc.service.impl;
 import com.srs.common.Error;
 import com.srs.common.ErrorCode;
 import com.srs.common.FindByIdRequest;
+import com.srs.common.NoContentResponse;
 import com.srs.common.exception.ObjectNotFoundException;
 import com.srs.market.*;
 import com.srs.market.common.dto.StallPoint;
@@ -18,9 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElse;
@@ -256,7 +255,8 @@ public class StallGrpcServiceImpl implements StallGrpcService {
                 .setData(GetStallResponse.Data.newBuilder()
                         .setStall(grpcStall)
                         .build())
-                .build();    }
+                .build();
+    }
 
     @Override
     public GetStallResponse getPublishedStall(FindByIdRequest request, GrpcPrincipal principal) {
@@ -284,7 +284,8 @@ public class StallGrpcServiceImpl implements StallGrpcService {
                 .setData(GetStallResponse.Data.newBuilder()
                         .setStall(grpcStall)
                         .build())
-                .build();    }
+                .build();
+    }
 
     private GetStallResponse doUpdateStallMetadata(StallEntity stall, UpdateStallMetadataRequest request, GrpcPrincipal principal) {
 
@@ -385,5 +386,75 @@ public class StallGrpcServiceImpl implements StallGrpcService {
         }
 
         return hasChanged;
+    }
+
+    @Override
+    @Transactional
+    public NoContentResponse deleteStall(FindByIdRequest request, GrpcPrincipal principal) {
+        var userId = principal.getUserId();
+        var errors = requestValidator.validate(request, userId);
+
+        if (!ErrorCode.SUCCESS.equals(errors.getCode())) {
+            return NoContentResponse.newBuilder()
+                    .setSuccess(false)
+                    .setError(errors)
+                    .build();
+        }
+
+        log.info("Preparing to delete stalls in batch");
+        var stallId = UUID.fromString(request.getId());
+        var stall = stallRepository.findById(stallId)
+                .orElseThrow(() -> new ObjectNotFoundException("Stall not found"));
+
+        if(stall.isPrimaryVersion()){
+            stallRepository.softDeleteNonDraftVersionByIds(stallId);
+        } else {
+            stallRepository.hardDeleteDraftVersionByIds(stallId);
+        }
+
+        return NoContentResponse.newBuilder()
+                .setSuccess(true)
+                .build();
+    }
+
+    @Override
+    public GetStallInfoResponse getStallInfo(GetStallInfoRequest request, GrpcPrincipal principal) {
+        var searcher = String.format("%s%s%s", request.getSearcher().getMarketCode(), request.getSearcher().getFloorCode(), request.getSearcher().getStallCode());
+
+        var stall = stallRepository.findByMarketCodeAndFloorCodeAndStallCode(searcher)
+                .orElseThrow(() -> new ObjectNotFoundException("Stall not found with given information"));
+
+        var grpcStall = stallGrpcMapper.toGrpcStallInfo(stall);
+
+        return GetStallInfoResponse.newBuilder()
+                .setSuccess(true)
+                .setData(GetStallInfoResponse.Data.newBuilder()
+                        .setStall(grpcStall)
+                        .build())
+                .build();
+    }
+
+    @Override
+    public ListStallsInfoResponse listStallsInfo(ListStallsInfoRequest request, GrpcPrincipal principal) {
+        var filter = request.getSearchersList().stream()
+                .map(s -> String.join("",
+                        requireNonNullElse(s.getMarketCode(), ""),
+                        requireNonNullElse(s.getFloorCode(), ""),
+                        requireNonNullElse(s.getStallCode(), ""))
+                )
+                .collect(Collectors.toSet());
+
+        var stalls = stallRepository.findAnd4Rent(filter);
+
+        var grpcStalls = stalls.stream()
+                .map(stallGrpcMapper::toGrpcStallInfo)
+                .collect(Collectors.toUnmodifiableList());
+
+        return ListStallsInfoResponse.newBuilder()
+                .setSuccess(true)
+                .setData(ListStallsInfoResponse.Data.newBuilder()
+                        .addAllStalls(grpcStalls)
+                        .build())
+                .build();
     }
 }
