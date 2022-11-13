@@ -109,4 +109,17 @@ public interface StallRepository extends JpaRepository<StallEntity, UUID> {
             "and s.clonedFrom is null " +
             "and concat(coalesce(s.market.code, ''), coalesce(s.floor.code, ''), coalesce(s.code, '')) in (:collect)")
     List<StallEntity> findAnd4Rent(@Param("collect") Collection<String> collect);
+
+    @Query("SELECT s FROM StallEntity s " +
+            "WHERE s.market.marketId = (SELECT m.marketId FROM MarketEntity m " +
+            "                         WHERE m.code = :marketCode " +
+            "                         AND m.previousVersion IS NULL) " +
+            "AND s.code = :stallCode " +
+            "AND s.floor.floorId = (SELECT f.floorId FROM FloorEntity f " +
+            "                               WHERE f.code = :floorCode " +
+            "                               AND f.previousVersion IS NULL)")
+    List<StallEntity> findAllByMarketCodeAndFloorCodeAndStallCode(
+            @Param("marketCode") String marketCode,
+            @Param("floorCode") String floorCode,
+            @Param("stallCode") String stallCode);
 }
