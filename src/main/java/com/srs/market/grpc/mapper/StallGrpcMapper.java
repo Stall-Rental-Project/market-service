@@ -10,8 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.stream.Collectors;
-
 import static java.util.Objects.requireNonNullElse;
 
 
@@ -69,29 +67,18 @@ public class StallGrpcMapper implements BaseGrpcMapper<StallEntity, Stall> {
         var builder = Stall.newBuilder()
                 .setStallId(stall.getStallId().toString())
                 .setCode(stall.getCode())
-                .setName(stall.getName())
-                .setStatusValue(stall.getStatus())
-                .setTypeValue(stall.getType())
-                .setStateValue(stall.getState())
-                .setClazzValue(stall.getClazz())
+                .setStallName(stall.getName())
+                .setStallStateValue(stall.getStatus())
+                .setStallTypeValue(stall.getType())
+                .setStallStateValue(stall.getState())
+                .setStallStatusValue(stall.getStatus())
+                .setStallClassValue(stall.getClazz())
                 .setArea(requireNonNullElse(stall.getArea(), -1.0))
-                .setPreviousVersion(
-                        stall.getPreviousVersion() != null ? stall.getPreviousVersion().toString()
-                                : "")
-                .setXAxis(requireNonNullElse(stall.getXAxis(), 0d))
-                .setYAxis(requireNonNullElse(stall.getYAxis(), 0d))
-                .setWAxis(requireNonNullElse(stall.getWAxis(), 0d))
-                .setHAxis(requireNonNullElse(stall.getHAxis(), 0d))
-                .setShape(requireNonNullElse(stall.getShape(), ""))
-                .setFontSize(stall.getFontSize())
-                .addAllPoints(stall.getPoints().stream()
-                        .map(p -> Point.newBuilder()
-                                .setXAxis(p.getXAxis())
-                                .setYAxis(p.getYAxis())
-                                .build())
-                        .collect(Collectors.toList()))
-                .setLabel(requireNonNullElse(stall.getLabel(), ""))
-                .setRotate(requireNonNullElse(stall.getRotate(), 0))
+                .setX(requireNonNullElse(stall.getXAxis(), 0d))
+                .setY(requireNonNullElse(stall.getYAxis(), 0d))
+                .setWidth(requireNonNullElse(stall.getWAxis(), 0d))
+                .setHeight(requireNonNullElse(stall.getHAxis(), 0d))
+                .setRotation(requireNonNullElse(stall.getRotate(), 0))
                 .setLeaseStatusValue(stall.getLeaseStatus())
                 .setOccupiedBy(
                         stall.getOccupiedBy() != null ? stall.getOccupiedBy().toString() : "");

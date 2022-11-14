@@ -17,13 +17,11 @@ public class StallWithDetailProjection implements Serializable {
     private UUID stallId;
     private UUID floorId;
     private String name;
-    private String shape;
     private UUID refId;
 
-    public StallWithDetailProjection(UUID stallId, UUID floorId, String name, String shape) {
+    public StallWithDetailProjection(UUID stallId, UUID floorId, String name) {
         this.stallId = stallId;
         this.floorId = floorId;
         this.name = name;
-        this.shape = shape;
     }
 }

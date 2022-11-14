@@ -11,7 +11,7 @@ public interface StallGrpcService {
 
     GetStallResponse updateStallMetadata(UpdateStallMetadataRequest request, GrpcPrincipal principal);
 
-    GetStallResponse updateStallPosition(UpdateStallPositionRequest request, GrpcPrincipal principal);
+    GetStallResponse updateStallPosition(CreateStallRequest request, GrpcPrincipal principal);
 
     GetStallResponse getStall(GetStallRequest request, GrpcPrincipal principal);
 

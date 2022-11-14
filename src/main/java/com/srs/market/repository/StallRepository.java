@@ -34,7 +34,7 @@ public interface StallRepository extends JpaRepository<StallEntity, UUID> {
             "where s.floor.floorId = :id " +
             "and s.previousVersion is null and s.deleted = false")
     void softDeleteNonDraftVersionByFloorIdId(@Param("id") UUID originalId);
-    @Query("select new com.srs.market.dto.projection.StallWithDetailProjection(s.stallId, s.floor.floorId, s.name, s.shape) "
+    @Query("select new com.srs.market.dto.projection.StallWithDetailProjection(s.stallId, s.floor.floorId, s.name) "
             +
             "from StallEntity s " +
             "where s.market.marketId = :marketId " +
@@ -43,7 +43,7 @@ public interface StallRepository extends JpaRepository<StallEntity, UUID> {
     List<StallWithDetailProjection> checkPrimaryStallThatHasDetail(
             @Param("marketId") UUID fromString);
 
-    @Query("select new com.srs.market.dto.projection.StallWithDetailProjection(s.stallId, s.floor.floorId, s.name, s.shape, s.previousVersion) " +
+    @Query("select new com.srs.market.dto.projection.StallWithDetailProjection(s.stallId, s.floor.floorId, s.name, s.previousVersion) " +
             "from StallEntity s " +
             "where s.market.marketId = :marketId " +
             "and s.previousVersion is not null " +

@@ -43,14 +43,6 @@ public class StallGrpcServiceImpl implements StallGrpcService {
     @Transactional
     public GetStallResponse createStall(CreateStallRequest request, GrpcPrincipal principal) {
         var userId = principal.getUserId();
-        var errors = requestValidator.validate(request, userId);
-
-        if (!ErrorCode.SUCCESS.equals(errors.getCode())) {
-            return GetStallResponse.newBuilder()
-                    .setSuccess(false)
-                    .setError(errors)
-                    .build();
-        }
 
         var floorId = UUID.fromString(request.getFloorplanId());
 
@@ -72,24 +64,18 @@ public class StallGrpcServiceImpl implements StallGrpcService {
 
         var stall = StallEntity.builder()
                 .withCode(currentStallIndex + "")
-                .withName(requireNonNullElse(request.getName(), ""))
-                .withStatus(request.hasStatus() ? request.getStatusValue() : StallStatus.STALL_STATUS_INACTIVE_VALUE)
-                .withType(request.hasType() ? request.getTypeValue() : StallType.STALL_TYPE_TEMPORARY_VALUE)
-                .withClazz(request.getClazzValue())
+                .withName("")
+                .withStatus(StallStatus.STALL_STATUS_INACTIVE_VALUE)
+                .withType(StallType.STALL_TYPE_TEMPORARY_VALUE)
                 .withState(StallState.STALL_STATE_UNPUBLISHED_VALUE)
-                .withArea(request.getArea())
-                .withShape(request.getShape())
-                .withXAxis(request.getXAxis())
-                .withYAxis(request.getYAxis())
-                .withWAxis(request.getWAxis())
-                .withHAxis(request.getHAxis())
-                .withPoints(request.getPointsList().stream().map(p -> new StallPoint(p.getXAxis(), p.getYAxis())).collect(Collectors.toList()))
-                .withLabel(request.getLabel())
-                .withRotate(request.getRotate())
+                .withXAxis(request.getX())
+                .withYAxis(request.getY())
+                .withWAxis(request.getWidth())
+                .withHAxis(request.getHeight())
+                .withRotate(request.getRotation())
                 .withFloor(floor)
                 .withMarket(floor.getMarket())
                 .withLeaseStatus(StallLeaseStatus.STALL_AVAILABLE_VALUE)
-                .withFontSize(request.getFontSize())
                 .build();
 
         var created = stallRepository.save(stall);
@@ -161,16 +147,8 @@ public class StallGrpcServiceImpl implements StallGrpcService {
 
     @Override
     @Transactional
-    public GetStallResponse updateStallPosition(UpdateStallPositionRequest request, GrpcPrincipal principal) {
+    public GetStallResponse updateStallPosition(CreateStallRequest request, GrpcPrincipal principal) {
         var userId = principal.getUserId();
-        var errors = requestValidator.validate(request, userId);
-
-        if (!ErrorCode.SUCCESS.equals(errors.getCode())) {
-            return GetStallResponse.newBuilder()
-                    .setSuccess(false)
-                    .setError(errors)
-                    .build();
-        }
 
         Optional<StallEntity> optional = stallDslRepository.findById4Update(UUID.fromString(request.getStallId()));
 
@@ -211,7 +189,7 @@ public class StallGrpcServiceImpl implements StallGrpcService {
         }
     }
 
-    private GetStallResponse doUpdateStallPosition(StallEntity stall, UpdateStallPositionRequest request, GrpcPrincipal principal) {
+    private GetStallResponse doUpdateStallPosition(StallEntity stall, CreateStallRequest request, GrpcPrincipal principal) {
 
         this.updateStallPosition(stall, request, principal);
 
@@ -306,23 +284,23 @@ public class StallGrpcServiceImpl implements StallGrpcService {
     private boolean updateStallMetadata(StallEntity stall, UpdateStallMetadataRequest request, GrpcPrincipal principal) {
         boolean hasChanged = false;
 
-        if (StringUtils.hasText(request.getName()) && !Objects.equals(stall.getName(), request.getName())) {
-            stall.setName(request.getName());
+        if (StringUtils.hasText(request.getStallName()) && !Objects.equals(stall.getName(), request.getStallName())) {
+            stall.setName(request.getStallName());
             hasChanged = true;
         }
 
-        if (request.hasStatus() && !Objects.equals(stall.getStatus(), request.getStatusValue())) {
-            stall.setStatus(request.getStatusValue());
+        if (request.hasStallStatus() && !Objects.equals(stall.getStatus(), request.getStallStatus())) {
+            stall.setStatus(request.getStallStatusValue());
             hasChanged = true;
         }
 
-        if (request.hasType() && !Objects.equals(stall.getType(), request.getTypeValue())) {
-            stall.setType(request.getTypeValue());
+        if (request.hasStallType() && !Objects.equals(stall.getType(), request.getStallType())) {
+            stall.setType(request.getStallTypeValue());
             hasChanged = true;
         }
 
-        if (request.hasClazz() && !Objects.equals(stall.getClazz(), request.getClazzValue())) {
-            stall.setClazz(request.getClazzValue());
+        if (request.hasStallClass() && !Objects.equals(stall.getClazz(), request.getStallClass())) {
+            stall.setClazz(request.getStallClassValue());
             hasChanged = true;
         }
 
@@ -334,56 +312,36 @@ public class StallGrpcServiceImpl implements StallGrpcService {
         return hasChanged;
     }
 
-    private boolean updateStallPosition(StallEntity stall, UpdateStallPositionRequest request, GrpcPrincipal principal) {
+    private boolean updateStallPosition(StallEntity stall, CreateStallRequest request, GrpcPrincipal principal) {
         boolean hasChanged = false;
 
-        if (!Objects.equals(stall.getShape(), request.getShape())) {
-            stall.setShape(request.getShape());
+
+        if (request.hasX() && !Objects.equals(stall.getXAxis(), request.getX())) {
+            stall.setXAxis(request.getX());
             hasChanged = true;
         }
 
-        if (request.hasXAxis() && !Objects.equals(stall.getXAxis(), request.getXAxis())) {
-            stall.setXAxis(request.getXAxis());
+        if (request.hasY() && !Objects.equals(stall.getYAxis(), request.getY())) {
+            stall.setYAxis(request.getY());
             hasChanged = true;
         }
 
-        if (request.hasYAxis() && !Objects.equals(stall.getYAxis(), request.getYAxis())) {
-            stall.setYAxis(request.getYAxis());
+        if (request.hasWidth() && !Objects.equals(stall.getWAxis(), request.getWidth())) {
+            stall.setWAxis(request.getWidth());
             hasChanged = true;
         }
 
-        if (request.hasWAxis() && !Objects.equals(stall.getWAxis(), request.getWAxis())) {
-            stall.setWAxis(request.getWAxis());
+        if (request.hasHeight() && !Objects.equals(stall.getHAxis(), request.getHeight())) {
+            stall.setHAxis(request.getHeight());
             hasChanged = true;
         }
 
-        if (request.hasHAxis() && !Objects.equals(stall.getHAxis(), request.getHAxis())) {
-            stall.setHAxis(request.getHAxis());
+        if (request.hasRotation() && !Objects.equals(stall.getRotate(), request.getRotation())) {
+            stall.setRotate(request.getRotation());
             hasChanged = true;
         }
 
-        var points = request.getPointsList().stream()
-                .map(p -> new StallPoint(p.getXAxis(), p.getYAxis()))
-                .collect(Collectors.toList());
-        if (!Objects.deepEquals(stall.getPoints(), points)) {
-            stall.setPoints(points);
-            hasChanged = true;
-        }
 
-        if (request.hasLabel() && !Objects.equals(stall.getLabel(), request.getLabel())) {
-            stall.setLabel(request.getLabel());
-            hasChanged = true;
-        }
-
-        if (request.hasRotate() && !Objects.equals(stall.getRotate(), request.getRotate())) {
-            stall.setRotate(request.getRotate());
-            hasChanged = true;
-        }
-
-        if (request.hasFontSize() && !Objects.equals(stall.getFontSize(), request.getFontSize())) {
-            stall.setFontSize(request.getFontSize());
-            hasChanged = true;
-        }
 
         return hasChanged;
     }

@@ -3,9 +3,7 @@ package com.srs.market.grpc.validator.impl;
 import com.srs.common.Error;
 import com.srs.common.FindByIdRequest;
 import com.srs.common.FindByIdsRequest;
-import com.srs.market.CreateStallRequest;
 import com.srs.market.UpdateStallMetadataRequest;
-import com.srs.market.UpdateStallPositionRequest;
 import com.srs.market.grpc.validator.StallRequestValidator;
 import com.srs.market.repository.FloorRepository;
 import com.srs.market.util.WebCommonUtil;
@@ -13,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,17 +25,6 @@ public class StallRequestValidatorImpl extends AbstractRequestValidator implemen
 
     private final FloorRepository floorRepository;
 
-    @Override
-    public Error validate(CreateStallRequest request, UUID userId) {
-        Map<String, String> errors = new HashMap<>();
-
-        if (request.hasArea() && request.getArea() < 0) {
-            addMinExceedsError("area", 0, errors);
-        }
-
-        return fromValidationResult(errors);
-    }
-
 
     @Override
     public Error validate(UpdateStallMetadataRequest request, UUID userId) {
@@ -50,18 +36,6 @@ public class StallRequestValidatorImpl extends AbstractRequestValidator implemen
 
         return fromValidationResult(errors);
     }
-
-    @Override
-    public Error validate(UpdateStallPositionRequest request, UUID userId) {
-        Map<String, String> errors = new HashMap<>();
-
-        if (!StringUtils.hasText(request.getShape())) {
-            addMissingRequiredError("shape", errors);
-        }
-
-        return fromValidationResult(errors);
-    }
-
 
     @Override
     public Error validate(FindByIdsRequest request, UUID userId) {

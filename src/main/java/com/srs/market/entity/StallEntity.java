@@ -65,17 +65,11 @@ public class StallEntity {
     //////////////////////////////////////////////////////////////////
     // The following props help UI re-render the stall shape in floorplan map
     //////////////////////////////////////////////////////////////////
-    private String shape;
     private Double xAxis;
     private Double yAxis;
     private Double wAxis;
     private Double hAxis;
-    @Convert(converter = StallPointConverter.class)
-    @Builder.Default
-    private List<StallPoint> points = new ArrayList<>();
-    private String label;
     private int rotate;
-    private double fontSize;
 
     private UUID clonedFrom;
 
@@ -113,19 +107,15 @@ public class StallEntity {
                 .withType(entity.getType())
                 .withClazz(entity.getClazz())
                 .withArea(entity.getArea())
-                .withShape(entity.getShape())
                 .withXAxis(entity.getXAxis())
                 .withYAxis(entity.getYAxis())
                 .withWAxis(entity.getWAxis())
                 .withHAxis(entity.getHAxis())
-                .withPoints(entity.getPoints())
-                .withLabel(entity.getLabel())
                 .withRotate(entity.getRotate())
                 .withFloor(entity.getFloor())
                 .withMarket(entity.getMarket())
                 .withPublishedAtLeastOnce(entity.isPublishedAtLeastOnce())
                 .withLeaseStatus(entity.getLeaseStatus())
-                .withFontSize(entity.getFontSize())
                 .withOccupiedBy(entity.getOccupiedBy())
                 .withClonedFrom(entity.getStallId())
                 .build();

@@ -52,7 +52,7 @@ public class StallGrpcServer extends StallServiceGrpc.StallServiceImplBase {
     }
 
     @Override
-    public void updateStallPosition(UpdateStallPositionRequest request, StreamObserver<GetStallResponse> responseObserver) {
+    public void updateStallPosition(CreateStallRequest request, StreamObserver<GetStallResponse> responseObserver) {
         try {
             var principal = GrpcPrincipalProvider.getGrpcPrincipal();
             responseObserver.onNext(stallGrpcService.updateStallPosition(request, principal));
