@@ -88,7 +88,7 @@ public interface StallRepository extends JpaRepository<StallEntity, UUID> {
     @Modifying
     @Transactional
     @Query("delete from StallEntity s " +
-            "where s.previousVersion in (:ids) " +
+            "where s.previousVersion = :id " +
             "or (s.stallId = :id " +
             "and s.previousVersion is not null)")
     void hardDeleteDraftVersionByIds(@Param("id") UUID stallId);
