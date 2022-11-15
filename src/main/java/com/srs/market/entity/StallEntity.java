@@ -79,6 +79,8 @@ public class StallEntity {
 
     private UUID occupiedBy;
 
+    private boolean isUpdatedDetail;
+
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
     @PrePersist

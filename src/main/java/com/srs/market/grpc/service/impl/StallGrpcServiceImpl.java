@@ -268,7 +268,7 @@ public class StallGrpcServiceImpl implements StallGrpcService {
     private GetStallResponse doUpdateStallMetadata(StallEntity stall, UpdateStallMetadataRequest request, GrpcPrincipal principal) {
 
         this.updateStallMetadata(stall, request, principal);
-
+        stall.setUpdatedDetail(true);
         var created = stallRepository.save(stall);
 
         var grpcStall = stallGrpcMapper.toGrpcMessage(created, true, created.getMarket().getCode(), created.getFloor().getCode());
@@ -359,15 +359,30 @@ public class StallGrpcServiceImpl implements StallGrpcService {
                     .build();
         }
         log.info("Preparing to delete stalls in batch");
-        var stallId = UUID.fromString(request.getId());
-        var stall = stallRepository.findById(stallId)
-                .orElseThrow(() -> new ObjectNotFoundException("Stall not found"));
+        Collection<UUID> stallIds=new ArrayList<>();
+        var stallId=UUID.fromString(request.getId());
+        stallIds.add(stallId);
 
-        if(stall.isPrimaryVersion()){
-            stallRepository.softDeleteNonDraftVersionByIds(stallId);
-        } else {
-            stallRepository.hardDeleteDraftVersionByIds(stallId);
+        stallIds.addAll(stallRepository.findAllPrimaryIdsByDraftIds(stallIds));
+
+        var stalls = stallDslRepository.findAllById4Delete(stallIds);
+
+
+
+        Set<UUID> softDeletedIds = new HashSet<>();
+        Set<UUID> hardDeletedIds = new HashSet<>();
+
+        for (var stall : stalls) {
+            if (stall.isPrimaryVersion()) {
+                softDeletedIds.add(stall.getStallId());
+            } else {
+                hardDeletedIds.add(stall.getStallId());
+            }
         }
+        stallRepository.softDeleteNonDraftVersionByIds(softDeletedIds);
+
+
+        stallRepository.hardDeleteDraftVersionByIds(hardDeletedIds);
 
         return NoContentResponse.newBuilder()
                 .setSuccess(true)

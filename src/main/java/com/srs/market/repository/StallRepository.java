@@ -82,16 +82,16 @@ public interface StallRepository extends JpaRepository<StallEntity, UUID> {
     @Modifying
     @Transactional
     @Query("update StallEntity s set s.deleted = true, s.state = 1 " +
-            "where s.stallId = :id and s.previousVersion is null")
-    void softDeleteNonDraftVersionByIds(@Param("id") UUID stallId);
+            "where s.stallId in (:ids) and s.previousVersion is null")
+    void softDeleteNonDraftVersionByIds(@Param("ids") Set<UUID> stallIds);
 
     @Modifying
     @Transactional
     @Query("delete from StallEntity s " +
-            "where s.previousVersion = :id " +
-            "or (s.stallId = :id " +
+            "where s.previousVersion in (:ids) " +
+            "or (s.stallId in (:ids) " +
             "and s.previousVersion is not null)")
-    void hardDeleteDraftVersionByIds(@Param("id") UUID stallId);
+    void hardDeleteDraftVersionByIds(@Param("ids") Collection<UUID> stallIdsList);
 
     @Query("select s from StallEntity s " +
             "join fetch s.market " +
@@ -122,4 +122,9 @@ public interface StallRepository extends JpaRepository<StallEntity, UUID> {
             @Param("marketCode") String marketCode,
             @Param("floorCode") String floorCode,
             @Param("stallCode") String stallCode);
+    @Query("select s.previousVersion from StallEntity s " +
+            "where s.stallId in (:ids) " +
+            "and s.previousVersion is not null")
+    List<UUID> findAllPrimaryIdsByDraftIds(@Param("ids") Collection<UUID> stallIds);
+
 }

@@ -122,5 +122,16 @@ public class StallDslRepository {
 
         return query.fetch();
     }
+    public List<StallEntity> findAllById4Delete(Collection<UUID> stallIds) {
+        JPAQuery<StallEntity> query = queryFactory.select(stall)
+                .from(stall)
+                .join(stall.floor).fetchJoin()
+                .join(stall.market).fetchJoin()
+                .where(stall.stallId.in(stallIds).or(stall.previousVersion.in(stallIds)))
+                .where(stall.deleted.eq(false));
+
+        return query.fetch();
+    }
+
 
 }

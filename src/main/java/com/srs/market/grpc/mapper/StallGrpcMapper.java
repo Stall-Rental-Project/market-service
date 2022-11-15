@@ -81,7 +81,8 @@ public class StallGrpcMapper implements BaseGrpcMapper<StallEntity, Stall> {
                 .setRotation(requireNonNullElse(stall.getRotate(), 0))
                 .setLeaseStatusValue(stall.getLeaseStatus())
                 .setOccupiedBy(
-                        stall.getOccupiedBy() != null ? stall.getOccupiedBy().toString() : "");
+                        stall.getOccupiedBy() != null ? stall.getOccupiedBy().toString() : "")
+                .setIsUpdatedDetail(stall.isUpdatedDetail());
 
         if (StringUtils.isNotBlank(floorCode)) {
             builder.setFloorCode(floorCode);
