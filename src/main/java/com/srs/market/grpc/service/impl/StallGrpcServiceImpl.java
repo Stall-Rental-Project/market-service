@@ -76,6 +76,7 @@ public class StallGrpcServiceImpl implements StallGrpcService {
                 .withFloor(floor)
                 .withMarket(floor.getMarket())
                 .withLeaseStatus(StallLeaseStatus.STALL_AVAILABLE_VALUE)
+                .withIsUpdatedDetail(false)
                 .build();
 
         var created = stallRepository.save(stall);
