@@ -349,6 +349,16 @@ public class StallGrpcServiceImpl implements StallGrpcService {
     @Override
     @Transactional
     public NoContentResponse deleteStall(FindByIdRequest request, GrpcPrincipal principal) {
+        var userId = principal.getUserId();
+        var errors = requestValidator.validate(request, userId);
+
+        if (!ErrorCode.SUCCESS.equals(errors.getCode())) {
+            return NoContentResponse.newBuilder()
+                    .setSuccess(false)
+                    .setError(errors)
+                    .build();
+        }
+        log.info("Preparing to delete stalls in batch");
         var stallId = UUID.fromString(request.getId());
         var stall = stallRepository.findById(stallId)
                 .orElseThrow(() -> new ObjectNotFoundException("Stall not found"));
