@@ -2,8 +2,8 @@ package com.srs.market.grpc.validator.impl;
 
 
 import com.srs.common.Error;
-import com.srs.common.ErrorCode;
 import com.srs.common.FindByIdRequest;
+import com.srs.common.exception.ObjectNotFoundException;
 import com.srs.market.ListMarketsRequest;
 import com.srs.market.MarketLocation;
 import com.srs.market.UpsertMarketRequest;
@@ -59,7 +59,10 @@ public class MarketRequestValidatorImpl extends AbstractRequestValidator impleme
 
                 var markets = marketRepository.findAllByNameAndCity(request.getName(), request.getLocation().getCity());
 
-                boolean isDuplicatedInName = markets.stream().anyMatch(market -> !(marketId.equals(market.getMarketId()) || marketId.equals(market.getPreviousVersion())));
+                var updatedMarket = marketRepository.findById(marketId).orElseThrow(() -> new ObjectNotFoundException("Market not found"));
+
+                boolean isDuplicatedInName = markets.stream().anyMatch(market -> !(marketId.equals(market.getMarketId()) || marketId.equals(market.getPreviousVersion())
+                ||(updatedMarket.getPreviousVersion().equals(market.getMarketId()))));
 
                 if (isDuplicatedInName) {
                     addAlreadyExistsError("name", "Market", errors);

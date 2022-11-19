@@ -181,7 +181,7 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
         var primaryFloorId = floor.isPrimaryVersion() ? floor.getFloorId() : floor.getPreviousVersion();
 
         var stalls = stallDslRepository.findAllByFloorIdAndDraft(primaryFloorId, request.getDraft()).stream()
-                .map(stall -> stallGrpcMapper.toGrpcMessage(stall, true))
+                .map(stall -> stallGrpcMapper.toGrpcMessage(stall))
                 .collect(Collectors.toList());
 
         var grpcFloor = floorGrpcMapper.toGrpcBuilder(floor)
@@ -377,7 +377,7 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
         var grpcFloor = floorGrpcMapper.toGrpcBuilder(floor);
 
         var stalls = stallRepository.findAllPublishedStallsByFloorId(floor.getFloorId()).stream()
-                .map(stall -> stallGrpcMapper.toGrpcMessage(stall, true))
+                .map(stall -> stallGrpcMapper.toGrpcMessage(stall))
                 .collect(Collectors.toUnmodifiableList());
 
         grpcFloor.addAllStalls(stalls)

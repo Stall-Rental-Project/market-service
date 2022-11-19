@@ -81,7 +81,7 @@ public class StallGrpcServiceImpl implements StallGrpcService {
 
         var created = stallRepository.save(stall);
 
-        var grpcStall = stallGrpcMapper.toGrpcMessage(created, true, floor.getMarket().getCode(), floor.getCode());
+        var grpcStall = stallGrpcMapper.toGrpcMessage(created, floor.getMarket().getCode(), floor.getCode());
 
         floorStallIndexRepository.increaseFloorIndex(floor.getCode(), 1);
 
@@ -197,7 +197,7 @@ public class StallGrpcServiceImpl implements StallGrpcService {
 
         var created = stallRepository.save(stall);
 
-        var grpcStall = stallGrpcMapper.toGrpcMessage(stall, true, created.getMarket().getCode(), created.getFloor().getCode());
+        var grpcStall = stallGrpcMapper.toGrpcMessage(stall, created.getMarket().getCode(), created.getFloor().getCode());
 
 
         return GetStallResponse.newBuilder()
@@ -227,7 +227,7 @@ public class StallGrpcServiceImpl implements StallGrpcService {
 
         var codeProjection = stallDslRepository.findFloorAndMarketCodeOfStall(stall.getStallId());
 
-        var grpcStall = stallGrpcMapper.toGrpcMessage(stall, true, codeProjection.getMarketCode(), codeProjection.getFloorCode());
+        var grpcStall = stallGrpcMapper.toGrpcMessage(stall, codeProjection.getMarketCode(), codeProjection.getFloorCode());
 
         return GetStallResponse.newBuilder()
                 .setSuccess(true)
@@ -256,7 +256,7 @@ public class StallGrpcServiceImpl implements StallGrpcService {
 
         var codeProjection = stallDslRepository.findFloorAndMarketCodeOfStall(stall.getStallId());
 
-        var grpcStall = stallGrpcMapper.toGrpcMessage(stall, true, codeProjection.getMarketCode(), codeProjection.getFloorCode());
+        var grpcStall = stallGrpcMapper.toGrpcMessage(stall, codeProjection.getMarketCode(), codeProjection.getFloorCode());
 
         return GetStallResponse.newBuilder()
                 .setSuccess(true)
@@ -272,7 +272,7 @@ public class StallGrpcServiceImpl implements StallGrpcService {
         stall.setUpdatedDetail(true);
         var created = stallRepository.save(stall);
 
-        var grpcStall = stallGrpcMapper.toGrpcMessage(created, true, created.getMarket().getCode(), created.getFloor().getCode());
+        var grpcStall = stallGrpcMapper.toGrpcMessage(created, created.getMarket().getCode(), created.getFloor().getCode());
 
         return GetStallResponse.newBuilder()
                 .setSuccess(true)

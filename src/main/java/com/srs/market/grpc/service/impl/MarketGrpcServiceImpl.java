@@ -550,11 +550,15 @@ public class MarketGrpcServiceImpl implements MarketGrpcService {
 
         var primary = this.getPrimaryMarket(markets);
         var draft = this.getDraftMarket(markets);
-
+        if (draft == null) {
+            return NoContentResponse.newBuilder()
+                    .setSuccess(true)
+                    .build();
+        }
         if (primary.getState() == MarketState.MARKET_STATE_PUBLISHED_VALUE) {
             doPublishMarket(primary, draft);
         } else {
-           doPublishMarketFirstTime(primary,draft);
+            doPublishMarketFirstTime(primary, draft);
         }
 
         return NoContentResponse.newBuilder()
@@ -722,7 +726,7 @@ public class MarketGrpcServiceImpl implements MarketGrpcService {
         marketRepository.delete(primary);
     }
 
-    private void doPublishMarketFirstTime(MarketEntity primary,MarketEntity draft){
+    private void doPublishMarketFirstTime(MarketEntity primary, MarketEntity draft) {
         var floors = floorRepository.findAllByMarketId(primary.getMarketId());
 
         var primaryFloors = new HashMap<UUID, FloorEntity>();

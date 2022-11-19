@@ -4,6 +4,7 @@ import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.srs.common.PageRequest;
+import com.srs.common.Status;
 import com.srs.common.domain.Page;
 import com.srs.market.ListMarketsRequest;
 import com.srs.market.MarketState;
@@ -57,7 +58,7 @@ public class MarketDslRepository {
 
         if (request.getPublishedOnly()) {
             query.where(market.state.eq(MarketState.MARKET_STATE_PUBLISHED_VALUE))
-                    .where(market.status.eq(MARKET_STATUS_ACTIVE_VALUE));
+                    .where(market.status.eq(Status.ACTIVE_VALUE));
         }
 
         if (!request.getAll()) {

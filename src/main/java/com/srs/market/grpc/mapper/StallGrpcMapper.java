@@ -48,14 +48,9 @@ public class StallGrpcMapper implements BaseGrpcMapper<StallEntity, Stall> {
 
     @Override
     public Stall toGrpcMessage(StallEntity stall) {
-        return this.toGrpcMessage(stall, false);
+        return this.toGrpcMessage(stall, null, null);
     }
-
-    public Stall toGrpcMessage(StallEntity stall, boolean fetchSection) {
-        return this.toGrpcMessage(stall, fetchSection, null, null);
-    }
-
-    public Stall toGrpcMessage(StallEntity stall, boolean fetchSection, String marketCode,
+    public Stall toGrpcMessage(StallEntity stall, String marketCode,
                                String floorCode) {
         var stallStatus = StallStatus.forNumber(stall.getStatus());
         var stallType = StallType.forNumber(stall.getType());
@@ -73,7 +68,7 @@ public class StallGrpcMapper implements BaseGrpcMapper<StallEntity, Stall> {
                 .setStallStateValue(stall.getState())
                 .setStallStatusValue(stall.getStatus())
                 .setStallClassValue(stall.getClazz())
-                .setArea(requireNonNullElse(stall.getArea(), -1.0))
+                .setArea(requireNonNullElse(stall.getArea(), 0d))
                 .setX(requireNonNullElse(stall.getXAxis(), 0d))
                 .setY(requireNonNullElse(stall.getYAxis(), 0d))
                 .setWidth(requireNonNullElse(stall.getWAxis(), 0d))
