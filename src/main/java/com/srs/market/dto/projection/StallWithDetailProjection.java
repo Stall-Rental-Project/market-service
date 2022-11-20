@@ -7,9 +7,7 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.util.UUID;
 
-/**
- * @author duynt on 10/20/21
- */
+
 @Getter
 @Setter
 @AllArgsConstructor
