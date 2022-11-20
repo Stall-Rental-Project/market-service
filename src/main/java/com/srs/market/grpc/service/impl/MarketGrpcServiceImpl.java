@@ -154,6 +154,7 @@ public class MarketGrpcServiceImpl implements MarketGrpcService {
                     .build();
         }
 
+        returned.setMarketId(UUID.fromString(request.getMarketId()));
         var grpcMarket = marketGrpcMapper.toGrpcBuilder(returned, hasDraft, true);
 
         supervisorRepository.findByMarketId(returned.getMarketId())
@@ -352,12 +353,12 @@ public class MarketGrpcServiceImpl implements MarketGrpcService {
             this.updateMarketSupervisor(market, request.getSupervisor());
         }
 
-        var updated = marketRepository.save(market);
+        marketRepository.save(market);
 
         return UpdateMarketResponse.newBuilder()
                 .setSuccess(true)
                 .setData(UpdateMarketResponse.Data.newBuilder()
-                        .setMarketId(updated.getMarketId().toString())
+                        .setMarketId(request.getMarketId())
                         .build())
                 .build();
     }

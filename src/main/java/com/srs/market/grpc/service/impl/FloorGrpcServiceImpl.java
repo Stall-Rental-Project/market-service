@@ -109,7 +109,7 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
         return UpsertFloorResponse.newBuilder()
                 .setSuccess(true)
                 .setData(UpsertFloorResponse.Data.newBuilder()
-                        .setMarketId(market.getMarketId().toString())
+                        .setMarketId(request.getMarketId())
                         .setFloorplanId(floor.getFloorId().toString())
                         .build())
                 .build();
@@ -183,7 +183,7 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
         var stalls = stallDslRepository.findAllByFloorIdAndDraft(primaryFloorId, request.getDraft()).stream()
                 .map(stall -> stallGrpcMapper.toGrpcMessage(stall))
                 .collect(Collectors.toList());
-
+        floor.setFloorId(floorId);
         var grpcFloor = floorGrpcMapper.toGrpcBuilder(floor)
                 .addAllStalls(stalls)
                 .setTotalStalls(stalls.size())
@@ -199,7 +199,7 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
 
     @Override
     @Transactional
-    public NoContentResponse  deleteFloor(DeleteFloorRequest request, GrpcPrincipal principal) {
+    public NoContentResponse deleteFloor(DeleteFloorRequest request, GrpcPrincipal principal) {
         var id = UUID.fromString(request.getFloorplanId());
 
         var floors = floorRepository.findAllById4Delete(id);
@@ -290,7 +290,7 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
         return UpsertFloorResponse.newBuilder()
                 .setSuccess(true)
                 .setData(UpsertFloorResponse.Data.newBuilder()
-                        .setFloorplanId(created.getFloorId().toString()))
+                        .setFloorplanId(request.getFloorplanId()))
                 .build();
     }
 
@@ -370,7 +370,7 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
                     .orElseThrow(() -> new ObjectNotFoundException("Floor not found with id " + request.getId()));
         }
 
-        if (floor.getState() != FloorState.FLOOR_STATE_PUBLISHED_VALUE ) {
+        if (floor.getState() != FloorState.FLOOR_STATE_PUBLISHED_VALUE) {
             throw new ObjectNotFoundException("Floor has not been published yet");
         }
 

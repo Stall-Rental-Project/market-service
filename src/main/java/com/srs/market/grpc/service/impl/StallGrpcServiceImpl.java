@@ -6,7 +6,6 @@ import com.srs.common.FindByIdRequest;
 import com.srs.common.NoContentResponse;
 import com.srs.common.exception.ObjectNotFoundException;
 import com.srs.market.*;
-import com.srs.market.common.dto.StallPoint;
 import com.srs.market.entity.StallEntity;
 import com.srs.market.grpc.mapper.StallGrpcMapper;
 import com.srs.market.grpc.service.StallGrpcService;
@@ -271,7 +270,7 @@ public class StallGrpcServiceImpl implements StallGrpcService {
         this.updateStallMetadata(stall, request, principal);
         stall.setUpdatedDetail(true);
         var created = stallRepository.save(stall);
-
+        created.setStallId(UUID.fromString(request.getStallId()));
         var grpcStall = stallGrpcMapper.toGrpcMessage(created, created.getMarket().getCode(), created.getFloor().getCode());
 
         return GetStallResponse.newBuilder()
@@ -343,7 +342,6 @@ public class StallGrpcServiceImpl implements StallGrpcService {
         }
 
 
-
         return hasChanged;
     }
 
@@ -360,14 +358,13 @@ public class StallGrpcServiceImpl implements StallGrpcService {
                     .build();
         }
         log.info("Preparing to delete stalls in batch");
-        Collection<UUID> stallIds=new ArrayList<>();
-        var stallId=UUID.fromString(request.getId());
+        Collection<UUID> stallIds = new ArrayList<>();
+        var stallId = UUID.fromString(request.getId());
         stallIds.add(stallId);
 
         stallIds.addAll(stallRepository.findAllPrimaryIdsByDraftIds(stallIds));
 
         var stalls = stallDslRepository.findAllById4Delete(stallIds);
-
 
 
         Set<UUID> softDeletedIds = new HashSet<>();
