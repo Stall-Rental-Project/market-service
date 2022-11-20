@@ -270,9 +270,8 @@ public class StallGrpcServiceImpl implements StallGrpcService {
         this.updateStallMetadata(stall, request, principal);
         stall.setUpdatedDetail(true);
         var created = stallRepository.save(stall);
-        created.setStallId(UUID.fromString(request.getStallId()));
         var grpcStall = stallGrpcMapper.toGrpcMessage(created, created.getMarket().getCode(), created.getFloor().getCode());
-
+        grpcStall.newBuilderForType().setStallId(request.getStallId());
         return GetStallResponse.newBuilder()
                 .setSuccess(true)
                 .setData(GetStallResponse.Data.newBuilder()
