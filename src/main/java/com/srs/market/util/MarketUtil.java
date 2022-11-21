@@ -48,9 +48,6 @@ public class MarketUtil {
                 case StallLeaseStatus.STALL_AVAILABLE_VALUE:
                     availableStalls++;
                     break;
-                case StallLeaseStatus.STALL_RESERVED_VALUE:
-                    reservedStalls++;
-                    break;
                 case StallLeaseStatus.STALL_OCCUPIED_VALUE:
                     occupiedStalls++;
                     break;
