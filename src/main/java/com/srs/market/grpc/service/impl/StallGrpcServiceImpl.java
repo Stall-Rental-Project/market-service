@@ -67,6 +67,7 @@ public class StallGrpcServiceImpl implements StallGrpcService {
                 .withStatus(StallStatus.STALL_STATUS_INACTIVE_VALUE)
                 .withType(StallType.STALL_TYPE_TEMPORARY_VALUE)
                 .withState(StallState.STALL_STATE_UNPUBLISHED_VALUE)
+                .withClazz(StallClass.STALL_CLASS_REGULAR_VALUE)
                 .withXAxis(request.getX())
                 .withYAxis(request.getY())
                 .withWAxis(request.getWidth())

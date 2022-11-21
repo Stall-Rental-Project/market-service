@@ -71,7 +71,9 @@ public interface StallRepository extends JpaRepository<StallEntity, UUID> {
     List<StallEntity> findAllByFloorId(@Param("id") UUID primaryId);
 
     @Query("select s from StallEntity s " +
-            "where s.floor.floorId = :id " +
+            "inner join fetch s.market " +
+            "inner join fetch s.floor f " +
+            "where f.floorId = :id " +
             "and s.previousVersion is null " +
             "and (" +
             "   (s.state = 2 and s.deleted = false) " +

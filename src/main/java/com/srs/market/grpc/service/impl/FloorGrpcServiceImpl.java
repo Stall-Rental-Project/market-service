@@ -402,7 +402,7 @@ public class FloorGrpcServiceImpl implements FloorGrpcService {
         var grpcFloor = floorGrpcMapper.toGrpcBuilder(floor);
 
         var stalls = stallRepository.findAllPublishedStallsByFloorId(floor.getFloorId()).stream()
-                .map(stall -> stallGrpcMapper.toGrpcMessage(stall))
+                .map(stall -> stallGrpcMapper.toGrpcMessage(stall,stall.getMarket().getCode(),stall.getFloor().getCode()))
                 .collect(Collectors.toUnmodifiableList());
 
         grpcFloor.addAllStalls(stalls)
