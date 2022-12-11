@@ -16,8 +16,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @KafkaListener(topics = {
-        KafkaTopic.LEASE_APPROVAL,
-        KafkaTopic.LEASE_EVENTS,
+        KafkaTopic.LEASE_APPROVAL
 }, containerFactory = "CustomKafkaListenerContainerFactory")
 @RequiredArgsConstructor
 @Log4j2

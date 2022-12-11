@@ -133,5 +133,18 @@ public class StallDslRepository {
         return query.fetch();
     }
 
+    public List<StallEntity> findAllPublishStallByMarketName(String marketName) {
+        JPAQuery<StallEntity> query = queryFactory.select(stall)
+                .from(stall)
+                .join(stall.market).fetchJoin()
+                .where(stall.market.name.eq(marketName))
+                .where(stall.previousVersion.isNull())
+                .where((stall.state.eq(StallState.STALL_STATE_PUBLISHED_VALUE)
+                        .and(stall.deleted.isFalse()))
+                        .or(stall.deleted.isTrue()
+                                .and(stall.publishedAtLeastOnce.isTrue())
+                                .and(stall.state.eq(StallState.STALL_STATE_UNPUBLISHED_VALUE))));
 
+        return query.fetch();
+    }
 }
