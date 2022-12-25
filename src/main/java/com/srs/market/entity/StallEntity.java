@@ -69,7 +69,7 @@ public class StallEntity {
     private Double yAxis;
     private Double wAxis;
     private Double hAxis;
-    private int rotate;
+    private Double rotate;
 
     private UUID clonedFrom;
 

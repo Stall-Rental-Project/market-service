@@ -73,7 +73,7 @@ public class StallGrpcMapper implements BaseGrpcMapper<StallEntity, Stall> {
                 .setY(requireNonNullElse(stall.getYAxis(), 0d))
                 .setWidth(requireNonNullElse(stall.getWAxis(), 0d))
                 .setHeight(requireNonNullElse(stall.getHAxis(), 0d))
-                .setRotation(requireNonNullElse(stall.getRotate(), 0))
+                .setRotation(requireNonNullElse(stall.getRotate(), 0d))
                 .setLeaseStatusValue(stall.getLeaseStatus())
                 .setOccupiedBy(
                         stall.getOccupiedBy() != null ? stall.getOccupiedBy().toString() : "")
