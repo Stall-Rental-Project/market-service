@@ -65,12 +65,11 @@ public class StallEntity {
     //////////////////////////////////////////////////////////////////
     // The following props help UI re-render the stall shape in floorplan map
     //////////////////////////////////////////////////////////////////
+    private Double rotate;
     private Double xAxis;
     private Double yAxis;
     private Double wAxis;
     private Double hAxis;
-    private Double rotate;
-
     private UUID clonedFrom;
 
     private boolean publishedAtLeastOnce;
